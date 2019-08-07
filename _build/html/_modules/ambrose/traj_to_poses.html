@@ -1,0 +1,979 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose.traj_to_poses &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ambrose.traj_to_poses</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ambrose.traj_to_poses</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;The `TrajToPoses`_ class and its supporting functions.&#39;&#39;&#39;</span>
+
+<span class="c1"># pragma pylint: disable=bad-whitespace</span>
+
+<span class="kn">import</span> <span class="nn">collections</span><span class="o">,</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+
+<span class="c1"># pragma pylint: disable=import-error</span>
+<span class="kn">import</span> <span class="nn">pyrosetta</span> <span class="k">as</span> <span class="nn">pr</span>
+<span class="kn">import</span> <span class="nn">pytraj</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="c1"># pragma pylint: enable=import-error</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+
+<span class="c1">### Supporting functions</span>
+
+<span class="k">def</span> <span class="nf">_chemical_manager</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">chemical</span><span class="o">.</span><span class="n">ChemicalManager</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+
+<span class="c1"># Currently an orphan, but may be needed for future expansions of</span>
+<span class="c1"># _TopologyParser.</span>
+<span class="k">def</span> <span class="nf">_global_element_set</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_global_element_set</span><span class="p">,</span> <span class="s1">&#39;es&#39;</span><span class="p">):</span>
+        <span class="n">_global_element_set</span><span class="o">.</span><span class="n">es</span> <span class="o">=</span> <span class="n">_chemical_manager</span><span class="p">()</span><span class="o">.</span><span class="n">element_set</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_global_element_set</span><span class="o">.</span><span class="n">es</span>
+
+<span class="k">def</span> <span class="nf">_global_residue_type_set</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_global_residue_type_set</span><span class="p">,</span> <span class="s1">&#39;rts&#39;</span><span class="p">):</span>
+        <span class="n">_global_residue_type_set</span><span class="o">.</span><span class="n">rts</span> <span class="o">=</span> \
+            <span class="n">_chemical_manager</span><span class="p">()</span><span class="o">.</span><span class="n">residue_type_set</span><span class="p">(</span><span class="s1">&#39;fa_standard&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_global_residue_type_set</span><span class="o">.</span><span class="n">rts</span>
+
+<span class="k">def</span> <span class="nf">_get_pr_res</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_global_residue_type_set</span><span class="p">()</span><span class="o">.</span><span class="n">name_map</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_patch_pr_res</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">patch_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_global_residue_type_set</span><span class="p">()</span><span class="o">.</span><span class="n">patch_map</span><span class="p">()[</span><span class="n">patch_name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+<span class="c1">### Supporting classes</span>
+
+<span class="k">class</span> <span class="nc">_ResidueClass</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Flag</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Describes attributes of an AMBER residue, used to control state</span>
+<span class="sd">    transition for the _TopologyParser finite state machine. The possible flags</span>
+<span class="sd">    are:</span>
+
+<span class="sd">    TER</span>
+<span class="sd">        Special flag reserved for the end of a topology. The only flag that</span>
+<span class="sd">        doesn&#39;t represent a residue.</span>
+<span class="sd">    NAA</span>
+<span class="sd">        Amino acid at the N-terminal of a protein.</span>
+<span class="sd">    AA</span>
+<span class="sd">        Amino acid at neither terminal of a protein.</span>
+<span class="sd">    CAA</span>
+<span class="sd">        Amino acid at the C-terminal of a protein.</span>
+<span class="sd">    RNA5</span>
+<span class="sd">        RNA base at the 5&#39; end of an RNA strand.</span>
+<span class="sd">    RNA</span>
+<span class="sd">        RNA base at neither end of an RNA strand.</span>
+<span class="sd">    RNA3</span>
+<span class="sd">        RNA base at the 3&#39; end of an RNA strand.</span>
+<span class="sd">    DNA5</span>
+<span class="sd">        DNA base at the 5&#39; end of an RNA strand.</span>
+<span class="sd">    DNA</span>
+<span class="sd">        DNA base at neither end of an RNA strand.</span>
+<span class="sd">    DNA3</span>
+<span class="sd">        DNA base at the 3&#39; end of an RNA strand.</span>
+<span class="sd">    ACE</span>
+<span class="sd">        An N-terminal acetyl on a protein.</span>
+<span class="sd">    NME</span>
+<span class="sd">        A C-terminal N-methylamine on a protein.</span>
+
+<span class="sd">    Additionally, the following composite flags (flags that are combinations of</span>
+<span class="sd">    single flags) are defined:</span>
+
+<span class="sd">    NONE</span>
+<span class="sd">        Something that doesn&#39;t belong to any class.</span>
+<span class="sd">    NAA_OR_CAA</span>
+<span class="sd">        Amino acid at either terminal of a protein.</span>
+<span class="sd">    ANY_AA</span>
+<span class="sd">        Amino acid.</span>
+<span class="sd">    ANY_RNA</span>
+<span class="sd">        RNA base.</span>
+<span class="sd">    ANY_DNA</span>
+<span class="sd">        DNA base.</span>
+<span class="sd">    NA5</span>
+<span class="sd">        RNA or DNA base at the 5&#39; end of a strand.</span>
+<span class="sd">    NA</span>
+<span class="sd">        RNA or DNA base at neither end of a strand.</span>
+<span class="sd">    NA3</span>
+<span class="sd">        RNA or DNA base at the 5&#39; end of a strand.</span>
+<span class="sd">    NA5_OR_NA3</span>
+<span class="sd">        RNA or DNA base at either end of a strand.</span>
+<span class="sd">    ANY_NA</span>
+<span class="sd">        Nucleobase.</span>
+<span class="sd">    ROSETTA_EQUIVALENT</span>
+<span class="sd">        Any residue that has a full Rosetta residue named after it; currently</span>
+<span class="sd">        this is amino acids and nucleobases.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">NONE</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">TER</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">NAA</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">AA</span>         <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">CAA</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">NAA_OR_CAA</span> <span class="o">=</span> <span class="n">NAA</span> <span class="o">|</span> <span class="n">CAA</span>
+    <span class="n">ANY_AA</span>     <span class="o">=</span> <span class="n">NAA</span> <span class="o">|</span> <span class="n">AA</span> <span class="o">|</span> <span class="n">CAA</span>
+    <span class="n">RNA5</span>       <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">RNA</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">RNA3</span>       <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">ANY_RNA</span>    <span class="o">=</span> <span class="n">RNA5</span> <span class="o">|</span> <span class="n">RNA</span> <span class="o">|</span> <span class="n">RNA3</span>
+    <span class="n">DNA5</span>       <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">DNA</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">DNA3</span>       <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">ANY_DNA</span>    <span class="o">=</span> <span class="n">DNA5</span> <span class="o">|</span> <span class="n">DNA</span> <span class="o">|</span> <span class="n">DNA3</span>
+    <span class="n">NA5</span>        <span class="o">=</span> <span class="n">RNA5</span> <span class="o">|</span> <span class="n">DNA5</span>
+    <span class="n">NA</span>         <span class="o">=</span> <span class="n">RNA</span> <span class="o">|</span> <span class="n">DNA</span>
+    <span class="n">NA3</span>        <span class="o">=</span> <span class="n">RNA3</span> <span class="o">|</span> <span class="n">DNA3</span>
+    <span class="n">NA5_OR_NA3</span> <span class="o">=</span> <span class="n">NA5</span> <span class="o">|</span> <span class="n">NA3</span>
+    <span class="n">ANY_NA</span>     <span class="o">=</span> <span class="n">NA5</span> <span class="o">|</span> <span class="n">NA</span> <span class="o">|</span> <span class="n">NA3</span>
+    <span class="n">ACE</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">NME</span>        <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">ROSETTA_EQUIVALENT</span> <span class="o">=</span> <span class="n">ANY_AA</span> <span class="o">|</span> <span class="n">ANY_NA</span>
+
+<span class="k">class</span> <span class="nc">_AtomRecord</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Describes the key properties of an atom in a PyRosetta ResidueType used</span>
+<span class="sd">    to construct AtomInformation records, and its mapping onto an absolute</span>
+<span class="sd">    index in a Topology.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent_res : :obj:`_ResidueMap` or None</span>
+<span class="sd">        The :obj:`_ResidueMap` that this ``_AtomRecord`` belongs to. Can be None,</span>
+<span class="sd">        but then you can&#39;t call `atom_information`.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The 4-character name of the atom in its Rosetta ``ResidueType``.</span>
+<span class="sd">    element : str</span>
+<span class="sd">        The short string representing the element of this atom in Rosetta,</span>
+<span class="sd">        usually equivalent to the atom&#39;s chemical symbol. (See</span>
+<span class="sd">        ``core::chemical::Elements`` in Rosetta.)</span>
+<span class="sd">    basep : bool</span>
+<span class="sd">        Whether or not this atom appears in the unpatched version of its parent</span>
+<span class="sd">        residue. Used by some ``set_indices`` methods of :obj:`_ResidueMap`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The 4-character name of the atom in its Rosetta ``ResidueType``.</span>
+<span class="sd">    res_name : str</span>
+<span class="sd">        The 3-4-character name of the residue the atom belongs to.</span>
+<span class="sd">    chain_id : str</span>
+<span class="sd">        The 1-character ID of the chain the atom belongs to.</span>
+<span class="sd">    h_number : int or None</span>
+<span class="sd">        The number that appears at the beginning of this atom&#39;s name, if it is a</span>
+<span class="sd">        hydrogen numbered that way.  Used by some ``set_indices`` methods of</span>
+<span class="sd">        :obj:`_ResidueMap`.</span>
+<span class="sd">    coda : str</span>
+<span class="sd">        The atom&#39;s name without its `h_number` and surrounding spaces. Equal to</span>
+<span class="sd">        `name` with its spaces stripped if `h_number` is None.</span>
+<span class="sd">    pt_i : int or None</span>
+<span class="sd">        The absolute index of the atom that this atom corresponds to in a</span>
+<span class="sd">        certain pytraj trajectory. Must be assigned externally, by convention by</span>
+<span class="sd">        ``set_indices`` methods of its parent :obj:`_ResidueMap`.</span>
+<span class="sd">    element : str</span>
+<span class="sd">        The short string representing the element of this atom in Rosetta,</span>
+<span class="sd">        usually equivalent to the atom&#39;s chemical symbol. (See</span>
+<span class="sd">        ``core::chemical::Elements`` in Rosetta.)</span>
+<span class="sd">    basep : bool</span>
+<span class="sd">        Whether or not this atom appears in the unpatched version of its parent</span>
+<span class="sd">        residue. Used by some ``set_indices`` methods of :obj:`_ResidueMap`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">res_name</span><span class="p">,</span> <span class="n">chain_id</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">basep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>     <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_name</span> <span class="o">=</span> <span class="n">res_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_id</span> <span class="o">=</span> <span class="n">chain_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="s1">&#39;123456789&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coda</span>     <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                        <span class="k">else</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pt_i</span>     <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element</span>  <span class="o">=</span> <span class="n">element</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">basep</span>    <span class="o">=</span> <span class="n">basep</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">atom_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Returns a Rosetta ``AtomInformation`` object based on this record.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rosetta.core.io.AtomInformation&#39;&#39;&#39;</span>
+
+        <span class="n">ai</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">AtomInformation</span><span class="p">()</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">resName</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_name</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">name</span>      <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">chainID</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_id</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">occupancy</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">segmentID</span> <span class="o">=</span> <span class="s1">&#39;    &#39;</span>
+        <span class="n">ai</span><span class="o">.</span><span class="n">element</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element</span>
+        <span class="k">return</span> <span class="n">ai</span>
+
+<span class="k">class</span> <span class="nc">_AMBERResidue</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Represents an AMBER residue, with lots of derived information about it</span>
+<span class="sd">    that&#39;s relevant to mapping it to a Rosetta residue.</span>
+
+<span class="sd">    This class emphatically does *not* store the original ``Residue`` object,</span>
+<span class="sd">    and its four listed attributes are all mutable. This is to provide</span>
+<span class="sd">    flexibility in the case that weird hacks have to be done to make edge cases</span>
+<span class="sd">    work later. (I have only a small but measurable amount of shame about this.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    top : pytraj.Topology</span>
+<span class="sd">        The topology to which the residue belongs.</span>
+<span class="sd">    residue_i : int</span>
+<span class="sd">        The index of the Pytraj residue object that we&#39;re casting within its</span>
+<span class="sd">        topology.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    i : int</span>
+<span class="sd">        The index of the residue.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The full name of the residue.</span>
+<span class="sd">    regular_name : str</span>
+<span class="sd">        The full name of the residue, minus the N or C at the front for</span>
+<span class="sd">        N/C-terminal amino acids, and minus the 5 or 3 at the end for 5&#39;/3&#39;</span>
+<span class="sd">        nucleic acids. Similar to the representative type name for Rosetta</span>
+<span class="sd">        residues.</span>
+<span class="sd">    first : int</span>
+<span class="sd">        The index of the first atom in the residue.</span>
+<span class="sd">    last : int</span>
+<span class="sd">        The index of the last atom in the residue.</span>
+<span class="sd">    atoms : tuple[str]</span>
+<span class="sd">        The names of the residue&#39;s atoms.</span>
+<span class="sd">    res_class : `_ResidueClass`_</span>
+<span class="sd">        The residue class of the residue.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># constant sets of residue names for the classifier</span>
+    <span class="n">RES_CLASS_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">frozenset</span><span class="p">({</span><span class="s1">&#39;ALA&#39;</span><span class="p">,</span> <span class="s1">&#39;ARG&#39;</span><span class="p">,</span> <span class="s1">&#39;ASH&#39;</span><span class="p">,</span> <span class="s1">&#39;ASN&#39;</span><span class="p">,</span> <span class="s1">&#39;ASP&#39;</span><span class="p">,</span> <span class="s1">&#39;CYM&#39;</span><span class="p">,</span> <span class="s1">&#39;CYS&#39;</span><span class="p">,</span> <span class="s1">&#39;CYX&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;GLN&#39;</span><span class="p">,</span> <span class="s1">&#39;GLU&#39;</span><span class="p">,</span> <span class="s1">&#39;GLH&#39;</span><span class="p">,</span> <span class="s1">&#39;GLY&#39;</span><span class="p">,</span> <span class="s1">&#39;HID&#39;</span><span class="p">,</span> <span class="s1">&#39;HIE&#39;</span><span class="p">,</span> <span class="s1">&#39;HIP&#39;</span><span class="p">,</span> <span class="s1">&#39;HYP&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;ILE&#39;</span><span class="p">,</span> <span class="s1">&#39;LEU&#39;</span><span class="p">,</span> <span class="s1">&#39;LYN&#39;</span><span class="p">,</span> <span class="s1">&#39;LYS&#39;</span><span class="p">,</span> <span class="s1">&#39;MET&#39;</span><span class="p">,</span> <span class="s1">&#39;PHE&#39;</span><span class="p">,</span> <span class="s1">&#39;PRO&#39;</span><span class="p">,</span> <span class="s1">&#39;SER&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;THR&#39;</span><span class="p">,</span> <span class="s1">&#39;TRP&#39;</span><span class="p">,</span> <span class="s1">&#39;TYR&#39;</span><span class="p">,</span> <span class="s1">&#39;VAL&#39;</span><span class="p">}):</span>
+            <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">AA</span><span class="p">,</span>
+        <span class="nb">frozenset</span><span class="p">({</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;U&#39;</span><span class="p">}):</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">RNA</span><span class="p">,</span>
+        <span class="nb">frozenset</span><span class="p">({</span><span class="s1">&#39;DA&#39;</span><span class="p">,</span> <span class="s1">&#39;DC&#39;</span><span class="p">,</span> <span class="s1">&#39;DG&#39;</span><span class="p">,</span> <span class="s1">&#39;DT&#39;</span><span class="p">}):</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">DNA</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="c1"># Maps of standard AMBER residue names to Rosetta residue names, with the</span>
+    <span class="c1"># caveat that the names with N or C prepended for N-terminal or C-terminal</span>
+    <span class="c1"># residues are not included. Only entries where the name is actually</span>
+    <span class="c1"># different are included.</span>
+    <span class="n">RES_NAME_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;ASH&#39;</span><span class="p">:</span><span class="s1">&#39;ASP&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;CYM&#39;</span><span class="p">:</span><span class="s1">&#39;CYZ&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;CYX&#39;</span><span class="p">:</span><span class="s1">&#39;CYD&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GLH&#39;</span><span class="p">:</span><span class="s1">&#39;GLU&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HID&#39;</span><span class="p">:</span><span class="s1">&#39;HIS_D&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HIE&#39;</span><span class="p">:</span><span class="s1">&#39;HIS&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HIP&#39;</span><span class="p">:</span><span class="s1">&#39;HIS&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HYP&#39;</span><span class="p">:</span><span class="s1">&#39;HPR&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;LYN&#39;</span><span class="p">:</span><span class="s1">&#39;LYS&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;A&#39;</span>  <span class="p">:</span><span class="s1">&#39;RAD&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;C&#39;</span>  <span class="p">:</span><span class="s1">&#39;RCY&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;G&#39;</span>  <span class="p">:</span><span class="s1">&#39;RGU&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;U&#39;</span>  <span class="p">:</span><span class="s1">&#39;URA&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;DA&#39;</span> <span class="p">:</span><span class="s1">&#39;ADE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;DC&#39;</span> <span class="p">:</span><span class="s1">&#39;CYT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;DG&#39;</span> <span class="p">:</span><span class="s1">&#39;GUA&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;DT&#39;</span> <span class="p">:</span><span class="s1">&#39;THY&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">res_i</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">res_i</span>
+        <span class="n">residue</span> <span class="o">=</span> <span class="n">top</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">res_i</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">residue</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="n">residue</span><span class="o">.</span><span class="n">first</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="n">residue</span><span class="o">.</span><span class="n">last</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">top</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">first</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">last</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regular_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name_set</span><span class="p">,</span> <span class="n">res_class</span> <span class="ow">in</span> <span class="n">_AMBERResidue</span><span class="o">.</span><span class="n">RES_CLASS_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">name_set</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">=</span> <span class="n">res_class</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">res_class</span> <span class="o">&amp;</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">AA</span> \
+               <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span> \
+               <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">name_set</span> \
+               <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="s1">&#39;NC&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">regular_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">=</span> <span class="n">res_class</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_naa</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;C&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_caa</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">res_class</span> <span class="o">&amp;</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA</span> \
+               <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> \
+               <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">name_set</span> \
+               <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="s1">&#39;53&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">regular_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">=</span> <span class="n">res_class</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_na5</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_na3</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_aa</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;OXT&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_aa</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_caa</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nitro_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+                <span class="n">nitro_bonded_names</span> <span class="o">=</span> \
+                    <span class="nb">tuple</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">atom</span><span class="p">(</span>
+                              <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">indices</span><span class="p">)[</span>
+                                  <span class="ow">not</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">nitro_index</span><span class="p">)</span>
+                               <span class="p">])</span><span class="o">.</span><span class="n">name</span> \
+                          <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">top</span><span class="o">.</span><span class="n">bonds</span> <span class="k">if</span> <span class="n">nitro_index</span> <span class="ow">in</span> <span class="n">b</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;C&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nitro_bonded_names</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_aa</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_naa</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rosetta_name</span> <span class="o">=</span> <span class="n">_AMBERResidue</span><span class="o">.</span><span class="n">RES_NAME_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">regular_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">regular_name</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_rosetta_equivalent</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int: Number of atoms in residue.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">def</span> <span class="nf">has_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_class</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">&amp;</span> <span class="n">res_class</span>
+    <span class="k">def</span> <span class="nf">add_class_and_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_class</span><span class="o">=</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="n">patch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">|=</span> <span class="n">res_class</span>
+        <span class="k">if</span> <span class="n">patch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">patch</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">remove_class_and_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_class</span><span class="o">=</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="n">patch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_class</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">res_class</span>
+        <span class="k">if</span> <span class="n">patch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">patch</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_aa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">AA</span><span class="p">)</span>
+    <span class="nd">@is_aa</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_aa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">AA</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_naa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NAA</span><span class="p">)</span>
+    <span class="nd">@is_naa</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_naa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NAA</span>
+        <span class="n">PATCH</span> <span class="o">=</span> <span class="s1">&#39;NtermProteinFull&#39;</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_caa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">CAA</span><span class="p">)</span>
+    <span class="nd">@is_caa</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_caa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">CAA</span>
+        <span class="n">PATCH</span> <span class="o">=</span> <span class="s1">&#39;CtermProteinFull&#39;</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_naa_or_caa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span>  <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NAA</span> \
+                              <span class="o">|</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">CAA</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_na</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA</span><span class="p">)</span>
+    <span class="nd">@is_na</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_na</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_na5</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA5</span><span class="p">)</span>
+    <span class="nd">@is_na5</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_na5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA5</span>
+        <span class="n">PATCH</span> <span class="o">=</span> <span class="s1">&#39;LowerRNA&#39;</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_na3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA3</span><span class="p">)</span>
+    <span class="nd">@is_na3</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_na3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">CLASS</span> <span class="o">=</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA3</span>
+        <span class="n">PATCH</span> <span class="o">=</span> <span class="s1">&#39;UpperRNA&#39;</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_class_and_patch</span><span class="p">(</span><span class="n">CLASS</span><span class="p">,</span> <span class="n">PATCH</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_na5_or_na3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span>  <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA5</span> \
+                              <span class="o">|</span> <span class="n">_ResidueClass</span><span class="o">.</span><span class="n">NA3</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">has_rosetta_equivalent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_class</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">ROSETTA_EQUIVALENT</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">_RosettaResidue</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Describes the key properties of a ResidueType used to construct</span>
+<span class="sd">    :obj:`_AtomRecord`s, and a mapping of its atoms onto absolute indices in a</span>
+<span class="sd">    pytraj ``Topology``. This object can be indexed and iterated over to</span>
+<span class="sd">    retreive its :obj:`_AtomRecord`s, but not sliced.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amber_residue : `_AMBERResidue`_</span>
+<span class="sd">        The AMBER residue it corresponds to. While some residues (such as</span>
+<span class="sd">        acetylated N-terminal residues) may correspond to multiple residues in</span>
+<span class="sd">        AMBER, only one of them will have the property ``.is_rosetta_res``. This</span>
+<span class="sd">        is generally the biggest, most &quot;canonical&quot; residue.</span>
+<span class="sd">    chain_id : str, optional</span>
+<span class="sd">        A single printable ASCII character representing the chain to which this</span>
+<span class="sd">        residue belongs. &#39;@&#39; by default (0x40).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amber_residue : `_AMBERResidue`_</span>
+<span class="sd">        The AMBER residue representing this residue.</span>
+<span class="sd">    chain_id : str</span>
+<span class="sd">        A single printable ASCII character representing the chain to which this</span>
+<span class="sd">        residue belongs.</span>
+<span class="sd">    atoms : list(:obj:`_AtomRecord`)</span>
+<span class="sd">        A list of the :obj:`_AtomRecord`s of this residue.</span>
+<span class="sd">    __names_to_indices : dict</span>
+<span class="sd">        A dict that maps the 4-character names of the atoms in the corresponding</span>
+<span class="sd">        Rosetta ``ResidueType`` to their indices in `atoms`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amber_residue</span><span class="p">,</span> <span class="n">chain_id</span><span class="o">=</span><span class="s1">&#39;@&#39;</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">amber_residue</span><span class="o">.</span><span class="n">rosetta_name</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="n">amber_residue</span><span class="o">.</span><span class="n">patches</span>
+        <span class="n">res_type</span> <span class="o">=</span> <span class="n">_get_pr_res</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">patches</span><span class="p">)))</span>
+
+        <span class="c1">## create _AtomRecords for self.atoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">atom_names_to_indices</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_base_atoms</span> <span class="o">=</span>    <span class="n">amber_residue</span><span class="o">.</span><span class="n">is_naa_or_caa</span> \
+                         <span class="ow">or</span> <span class="n">amber_residue</span><span class="o">.</span><span class="n">is_na5_or_na3</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">res_type</span><span class="o">.</span><span class="n">natoms</span><span class="p">()):</span>
+            <span class="n">atom_name</span> <span class="o">=</span> <span class="n">res_type</span><span class="o">.</span><span class="n">atom_name</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">atom_names_to_indices</span><span class="p">[</span><span class="n">atom_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_AtomRecord</span><span class="p">(</span><span class="n">atom_name</span><span class="p">,</span>
+                            <span class="n">res_type</span><span class="o">.</span><span class="n">name3</span><span class="p">(),</span>
+                            <span class="n">chain_id</span><span class="p">,</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="n">res_type</span><span class="o">.</span><span class="n">atom</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">element</span><span class="p">())[</span><span class="mi">9</span><span class="p">:],</span>
+                            <span class="n">basep</span><span class="o">=</span><span class="p">(</span><span class="n">all_base_atoms</span> <span class="ow">or</span> \
+                                   <span class="n">res_type</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">atom_name</span><span class="p">))))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">set_indices_by_name_relative</span><span class="p">(</span><span class="n">indices_dict</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;Provided a dict that maps Rosetta atom names to an offset of its</span>
+<span class="sd">            pt_i from the index of the first atom in the AMBER residue, set the</span>
+<span class="sd">            pt_is of each named atom to the appropriate absolute index.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            indices_dict : dict</span>
+<span class="sd">                A dict mapping the Rosetta names of atoms in this residue to the</span>
+<span class="sd">                indices of their corresponding atoms in a pytraj trajectory,</span>
+<span class="sd">                relative to the beginning of the base AMBER residue.</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+
+            <span class="k">for</span> <span class="n">atom_name</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">atom_names_to_indices</span><span class="p">[</span><span class="n">atom_name</span><span class="p">]]</span><span class="o">.</span><span class="n">pt_i</span> <span class="o">=</span> \
+                    <span class="n">amber_residue</span><span class="o">.</span><span class="n">first</span> <span class="o">+</span> <span class="n">i</span>
+
+        <span class="c1">## assign indices for N-terminal acetyl atoms</span>
+        <span class="k">if</span> <span class="s1">&#39;N_acetylated&#39;</span> <span class="ow">in</span> <span class="n">patches</span><span class="p">:</span>
+            <span class="n">set_indices_by_name_relative</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39; CP &#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="s1">&#39; CQ &#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="s1">&#39; OCP&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+
+        <span class="c1">## assign indices for hydrogens of base residue</span>
+        <span class="c1"># This sets the pt_i of the base atoms, based on a map of AMBER atom</span>
+        <span class="c1"># names to absolute pt_is, via a specific algorithm that works for</span>
+        <span class="c1"># canonical amino acids and canonical nucleic acids (and</span>
+        <span class="c1"># hydroxyproline, and not much else).</span>
+        <span class="n">pt_names_to_indices</span> <span class="o">=</span> <span class="p">{</span><span class="n">atom_name</span><span class="p">:</span> <span class="n">amber_residue</span><span class="o">.</span><span class="n">first</span> <span class="o">+</span> <span class="n">i</span> \
+                               <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">atom_name</span> \
+                               <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">amber_residue</span><span class="o">.</span><span class="n">atoms</span><span class="p">)}</span>
+        <span class="c1"># collection of codas of residues that have h numbers, mapped to a list</span>
+        <span class="c1"># of the atom records that have it:</span>
+        <span class="n">codas_with_h_numbers</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="c1"># write indices of residues that don&#39;t have h numbers</span>
+        <span class="k">for</span> <span class="n">atom_record</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">atom_record</span><span class="o">.</span><span class="n">basep</span><span class="p">:</span>
+                <span class="c1">## Mark atoms with h numbers and don&#39;t process them:</span>
+                <span class="k">if</span> <span class="n">atom_record</span><span class="o">.</span><span class="n">h_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">codas_with_h_numbers</span><span class="p">[</span><span class="n">atom_record</span><span class="o">.</span><span class="n">coda</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom_record</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="c1">## Handle edge cases:</span>
+                <span class="c1"># rosetta prolines have an extra virtual nitrogen at the</span>
+                <span class="c1"># same spot as the backbone nitrogen:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;PRO&#39;</span><span class="p">,</span> <span class="s1">&#39;HPR&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">atom_record</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39; NV &#39;</span><span class="p">:</span>
+                    <span class="n">atom_record</span><span class="o">.</span><span class="n">h_number</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">atom_record</span><span class="o">.</span><span class="n">coda</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+
+                <span class="c1">## Actually retrieve index:</span>
+                <span class="n">atom_record</span><span class="o">.</span><span class="n">pt_i</span> <span class="o">=</span> <span class="n">pt_names_to_indices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">atom_record</span><span class="o">.</span><span class="n">coda</span><span class="p">)</span>
+                <span class="c1"># we actually have no plan if the .get returns None</span>
+        <span class="c1"># maps codas to starting h number in pt residue (pr residue h</span>
+        <span class="c1"># numbers assumed to always start at 1):</span>
+        <span class="n">pt_starting_h_numbers</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">coda</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> \
+                       <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pt_names_to_indices</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> \
+                       <span class="k">if</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">coda</span> <span class="ow">and</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">())</span>
+             <span class="k">for</span> <span class="n">coda</span> <span class="ow">in</span> <span class="n">codas_with_h_numbers</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        <span class="c1"># write indices of residues that DO have h numbers:</span>
+        <span class="k">for</span> <span class="n">coda</span><span class="p">,</span> <span class="n">atom_records</span> <span class="ow">in</span> <span class="n">codas_with_h_numbers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">atom_record</span> <span class="ow">in</span> <span class="n">atom_records</span><span class="p">:</span>
+                <span class="n">atom_record</span><span class="o">.</span><span class="n">pt_i</span> <span class="o">=</span> \
+                    <span class="n">pt_names_to_indices</span><span class="p">[</span>
+                        <span class="n">coda</span> <span class="o">+</span> \
+                        <span class="nb">str</span><span class="p">(</span><span class="n">atom_record</span><span class="o">.</span><span class="n">h_number</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> \
+                            <span class="n">pt_starting_h_numbers</span><span class="p">[</span><span class="n">atom_record</span><span class="o">.</span><span class="n">coda</span><span class="p">])]</span>
+
+        <span class="c1">## assign indices for C-terminal N-methylamine atoms</span>
+        <span class="k">if</span> <span class="s1">&#39;C_methylamidated&#39;</span> <span class="ow">in</span> <span class="n">patches</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">amber_residue</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">()</span>
+            <span class="n">set_indices_by_name_relative</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39; NR &#39;</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span>
+                 <span class="s1">&#39; CS &#39;</span><span class="p">:</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+                 <span class="s1">&#39; HR &#39;</span><span class="p">:</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">_TopologyParser</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;A finite state machine that parses residues from a pytraj topology and</span>
+<span class="sd">    builds a list of `_RosettaResidue`_ objects.&#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">## Build transitions:</span>
+        <span class="c1"># Each transition emits a tuple of &quot;action tokens&quot; that cause the parser</span>
+        <span class="c1"># to perform some action. Note that a &quot;Rosetta equivalent queue&quot; exists,</span>
+        <span class="c1"># exists, to which every AMBER residue in the topology that has a</span>
+        <span class="c1"># Rosetta equivalent immediately gets pushed, before any actions are</span>
+        <span class="c1"># performed. The tokens are:</span>
+        <span class="c1">#</span>
+        <span class="c1"># SKIP</span>
+        <span class="c1">#     If the current residue is a Rosetta equivalent residue, remove it</span>
+        <span class="c1">#     from the queue. Otherwise do nothing.</span>
+        <span class="c1"># CHBR</span>
+        <span class="c1">#     Increment the chain counter. Whenever a residue is EMITted, it</span>
+        <span class="c1">#     receives whatever chain ID the current chain counter reads.</span>
+        <span class="c1"># EMIT</span>
+        <span class="c1">#     Package the first residue in the queue into a `_RosettaResidue`_</span>
+        <span class="c1">#     object and add it to the list of those objects. This removes the</span>
+        <span class="c1">#     residue from the queue, and no further actions may be performed</span>
+        <span class="c1">#     on it. (Unless in the future an action token is invented that</span>
+        <span class="c1">#     operates on the Rosetta residue list, but let&#39;s not.)</span>
+        <span class="c1"># PATCH:patch_name</span>
+        <span class="c1">#     Adds the patch *patch_name* to the end of the list of patches to</span>
+        <span class="c1">#     be applied to the residue at the front of the queue. *patch_name*</span>
+        <span class="c1">#     may be any string, but in practice should be the name of a valid</span>
+        <span class="c1">#     Rosetta patch.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;BEGIN&#39;</span>
+        <span class="n">Class</span> <span class="o">=</span> <span class="n">_ResidueClass</span> <span class="c1"># brevity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TRANSITIONS</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">:</span>  <span class="p">{</span><span class="n">Class</span><span class="o">.</span><span class="n">NAA</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;PRE_AA&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;CHBR&#39;</span><span class="p">,</span> <span class="s1">&#39;EMIT&#39;</span><span class="p">,)),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">ACE</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;ACE_AA&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;CHBR&#39;</span><span class="p">,)),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">NA5</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">,</span>     <span class="p">(</span><span class="s1">&#39;CHBR&#39;</span><span class="p">,</span> <span class="s1">&#39;EMIT&#39;</span><span class="p">,))},</span>
+             <span class="s1">&#39;PRE_AA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">Class</span><span class="o">.</span><span class="n">AA</span><span class="p">:</span>  <span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span>     <span class="p">()),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">CAA</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">,</span>  <span class="p">(</span><span class="s1">&#39;EMIT&#39;</span><span class="p">,))},</span>
+             <span class="s1">&#39;ACE_AA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">Class</span><span class="o">.</span><span class="n">AA</span><span class="p">:</span>  <span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span>     <span class="p">(</span><span class="s1">&#39;PATCH:N_acetylated&#39;</span><span class="p">,))},</span>
+             <span class="s1">&#39;AA&#39;</span><span class="p">:</span>     <span class="p">{</span><span class="n">Class</span><span class="o">.</span><span class="n">AA</span><span class="p">:</span>  <span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span>     <span class="p">(</span><span class="s1">&#39;EMIT&#39;</span><span class="p">,)),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">CAA</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">,</span>  <span class="p">(</span><span class="s1">&#39;EMIT&#39;</span><span class="p">,</span> <span class="s1">&#39;EMIT&#39;</span><span class="p">,)),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">NME</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">,</span>  <span class="p">(</span><span class="s1">&#39;PATCH:C_methylamidated&#39;</span><span class="p">,</span> <span class="s1">&#39;EMIT&#39;</span><span class="p">))},</span>
+             <span class="s1">&#39;NA&#39;</span><span class="p">:</span>     <span class="p">{</span><span class="n">Class</span><span class="o">.</span><span class="n">NA</span><span class="p">:</span>  <span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">,</span>     <span class="p">(</span><span class="s1">&#39;EMIT&#39;</span><span class="p">,)),</span>
+                        <span class="n">Class</span><span class="o">.</span><span class="n">NA3</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">,</span>  <span class="p">(</span><span class="s1">&#39;EMIT&#39;</span><span class="p">,))}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_TRANSITIONS</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">:</span>  <span class="p">(</span><span class="s1">&#39;BEGIN&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;SKIP&#39;</span><span class="p">,)),</span>
+             <span class="s1">&#39;ACE_AA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span>    <span class="p">(</span><span class="s1">&#39;SKIP&#39;</span><span class="p">,)),</span>
+             <span class="s1">&#39;AA&#39;</span><span class="p">:</span>     <span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span>    <span class="p">(</span><span class="s1">&#39;SKIP&#39;</span><span class="p">,)),</span>
+             <span class="s1">&#39;NA&#39;</span><span class="p">:</span>     <span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">,</span>    <span class="p">(</span><span class="s1">&#39;SKIP&#39;</span><span class="p">,))}</span>
+    <span class="k">def</span> <span class="nf">transit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received_class</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Perform a state transition, with received_id as the key that maps to</span>
+<span class="sd">        the transition.&#39;&#39;&#39;</span>
+
+        <span class="k">for</span> <span class="n">accepted_class</span><span class="p">,</span> <span class="n">possible_transition</span> \
+            <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRANSITIONS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">received_class</span> <span class="o">&amp;</span> <span class="n">accepted_class</span><span class="p">:</span>
+                <span class="n">next_state</span><span class="p">,</span> <span class="n">emitted</span> <span class="o">=</span> <span class="n">possible_transition</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># if we went through the whole loop without breaking...</span>
+            <span class="n">next_state</span><span class="p">,</span> <span class="n">emitted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_TRANSITIONS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+        <span class="k">return</span> <span class="n">emitted</span>
+    <span class="k">def</span> <span class="nf">parse_topology</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Returns a list of `_ResidueMap`_ objects, which contain the</span>
+<span class="sd">        information needed to build ``core::chemical::Residue`` objects from the</span>
+<span class="sd">        list of atoms in the given topology, namely ResidueType names, any</span>
+<span class="sd">        Patches, and a map of each ResidueType&#39;s atoms to an atom index in the</span>
+<span class="sd">        given topology.&#39;&#39;&#39;</span>
+
+        <span class="n">amber_res</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">output_residues</span> <span class="o">=</span> <span class="p">[]</span>          <span class="c1"># collects output _RosettaResidues</span>
+        <span class="n">rosetta_equivalent_queue</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># queues Rosetta-equivalent _AMBERResidues</span>
+        <span class="n">chain_id</span> <span class="o">=</span> <span class="s1">&#39;@&#39;</span>
+
+        <span class="k">def</span> <span class="nf">process_tokens</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+            <span class="k">nonlocal</span> <span class="n">amber_res</span>
+            <span class="k">nonlocal</span> <span class="n">output_residues</span>
+            <span class="k">nonlocal</span> <span class="n">rosetta_equivalent_queue</span>
+            <span class="k">nonlocal</span> <span class="n">chain_id</span>
+            <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">debug_print</span><span class="p">(</span><span class="s1">&#39;token:&#39;</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s1">&#39;SKIP&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">amber_res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                       <span class="ow">and</span> <span class="n">amber_res</span><span class="o">.</span><span class="n">has_rosetta_equivalent</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">rosetta_equivalent_queue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s1">&#39;CHBR&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">ord</span><span class="p">(</span><span class="n">chain_id</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">126</span><span class="p">:</span>
+                        <span class="n">chain_id</span> <span class="o">=</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">chain_id</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;PATCH:&#39;</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">rosetta_equivalent_queue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_class_and_patch</span><span class="p">(</span>
+                            <span class="n">patch</span><span class="o">=</span><span class="n">token</span><span class="p">[</span><span class="mi">6</span><span class="p">:])</span>
+                    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">TopologyParsingError</span><span class="p">(</span>
+                            <span class="s1">&#39;Error applying patch </span><span class="si">{}</span><span class="s1"> to topology &#39;</span>
+                            <span class="s1">&#39;at residue: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">amber_res</span><span class="p">))</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s1">&#39;EMIT&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">output_residues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">_RosettaResidue</span><span class="p">(</span>
+                                <span class="n">rosetta_equivalent_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+                                <span class="n">chain_id</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">TopologyParsingError</span><span class="p">(</span>
+                            <span class="s1">&#39;Error applying adding residue to topology &#39;</span>
+                            <span class="s1">&#39;at residue: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">amber_res</span><span class="p">))</span>
+                    <span class="k">continue</span>
+
+        <span class="k">for</span> <span class="n">res_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">n_residues</span><span class="p">):</span>
+            <span class="n">amber_res</span> <span class="o">=</span> <span class="n">_AMBERResidue</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">res_i</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">debug_print</span><span class="p">(</span><span class="s1">&#39;residue:&#39;</span><span class="p">,</span> <span class="n">amber_res</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">amber_res</span><span class="o">.</span><span class="n">has_rosetta_equivalent</span><span class="p">:</span>
+                <span class="n">rosetta_equivalent_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">amber_res</span><span class="p">)</span>
+            <span class="n">process_tokens</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transit</span><span class="p">(</span><span class="n">amber_res</span><span class="o">.</span><span class="n">res_class</span><span class="p">))</span>
+
+        <span class="n">amber_res</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">process_tokens</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transit</span><span class="p">(</span><span class="n">_ResidueClass</span><span class="o">.</span><span class="n">TER</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output_residues</span><span class="p">)</span>
+
+<span class="c1">### The money class</span>
+
+<div class="viewcode-block" id="TrajToPoses"><a class="viewcode-back" href="../../ambrose.html#ambrose.traj_to_poses.TrajToPoses">[docs]</a><span class="k">class</span> <span class="nc">TrajToPoses</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;A container that provides a ``Pose`` for each frame of a given pytraj</span>
+<span class="sd">    ``Trajectory``. The Poses are created dynamically when you ask for them, so</span>
+<span class="sd">    this object is not very memory-intensive. The trade-off, however, is that</span>
+<span class="sd">    getting a ``Pose`` from it is fairly expensive, so try not to do it more</span>
+<span class="sd">    times than you need to. (One could imagine a version of this object that</span>
+<span class="sd">    stores weak references to all the ``Pose``s it emits, so that it returns the</span>
+<span class="sd">    same ``Pose`` object every time for a given index unless it stops being used</span>
+<span class="sd">    elsewhere. But then you&#39;d have to make a new TrajToPoses_ object</span>
+<span class="sd">    every time you wanted the original ``Pose`` corresponding to that index,</span>
+<span class="sd">    which is unidiomatic.)</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    This is how one would obtain a ``Pose`` for the first frame of a</span>
+<span class="sd">    ``Trajectory``::</span>
+
+<span class="sd">        import pyrosetta as pr; pr.init()</span>
+<span class="sd">        import pytraj as pt</span>
+<span class="sd">        from miniambrose import TrajToPose</span>
+
+<span class="sd">        traj = pt.iterload(&#39;my-traj.mdcrd&#39;, &#39;my-top.prmtop&#39;)</span>
+<span class="sd">        poses = TrajToPose(traj)</span>
+<span class="sd">        pose = poses[0]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    traj : pytraj.Trajectory</span>
+<span class="sd">        The trajectory the Poses are derived from.</span>
+<span class="sd">    options : rosetta.core.import_pose.ImportPoseOptions, optional</span>
+<span class="sd">        The options used to derive the Poses.</span>
+<span class="sd">    __residues : tuple(_ResidueMap), optional</span>
+<span class="sd">        A tuple of `_RosettaResidue`_s to use as its internal map of Rosetta</span>
+<span class="sd">        residues to pytraj residues. Used whenever slices of this object are</span>
+<span class="sd">        made.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    traj : pytraj.Trajectory</span>
+<span class="sd">        The trajectory the Poses are derived from.</span>
+<span class="sd">    options : rosetta.core.import_pose.ImportPoseOptions</span>
+<span class="sd">        The options used to derive the Poses.</span>
+<span class="sd">    __residues : tuple(_ResidueMap)</span>
+<span class="sd">        A tuple of `_RosettaResidue`_s to use as its internal map of Rosetta</span>
+<span class="sd">        residues to pytraj residues.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traj</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">__residues</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traj</span> <span class="o">=</span> <span class="n">traj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span> <span class="ow">or</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">import_pose</span><span class="o">.</span><span class="n">ImportPoseOptions</span>
+        <span class="k">if</span> <span class="n">__residues</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__residues</span> <span class="o">=</span> <span class="n">__residues</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__residues</span> <span class="o">=</span> <span class="n">_TopologyParser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_topology</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">top</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">TrajToPoses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">__residues</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__residues</span><span class="p">)</span>
+
+        <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">sfr</span>  <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">StructFileRep</span><span class="p">()</span>
+        <span class="n">ChainAtoms</span>      <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">vector0_core_io_AtomInformation</span>
+        <span class="n">chain_atoms_map</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">ChainAtoms</span><span class="p">)</span>
+        <span class="n">atom_i</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">res_i</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__residues</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">atom_record</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">atom_record</span><span class="o">.</span><span class="n">pt_i</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">ai</span> <span class="o">=</span> <span class="n">atom_record</span><span class="o">.</span><span class="n">atom_information</span>
+                <span class="n">ai</span><span class="o">.</span><span class="n">serial</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">atom_i</span><span class="p">)</span>
+                <span class="n">ai</span><span class="o">.</span><span class="n">resSeq</span> <span class="o">=</span> <span class="n">res_i</span>
+                <span class="n">ai</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ai</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">ai</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="n">atom_record</span><span class="o">.</span><span class="n">pt_i</span><span class="p">]</span>
+                <span class="n">chain_atoms_map</span><span class="p">[</span><span class="n">ai</span><span class="o">.</span><span class="n">chainID</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ai</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="n">chain_atoms_map</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">sfr</span><span class="o">.</span><span class="n">chains</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span>
+        <span class="n">sfr</span><span class="o">.</span><span class="n">header</span><span class="p">()</span><span class="o">.</span><span class="n">finalize_parse</span><span class="p">()</span>
+
+        <span class="n">pose</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">Pose</span><span class="p">()</span>
+        <span class="n">rts</span> <span class="o">=</span> <span class="n">_global_residue_type_set</span><span class="p">()</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">import_pose</span><span class="o">.</span><span class="n">ImportPoseOptions</span><span class="p">()</span>
+        <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">import_pose</span><span class="o">.</span><span class="n">build_pose_as_is</span><span class="p">(</span><span class="n">sfr</span><span class="p">,</span> <span class="n">pose</span><span class="p">,</span> <span class="n">rts</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pose</span></div>
+
+<span class="c1">### Front-facing functions</span>
+
+<div class="viewcode-block" id="pose_from_amber_params"><a class="viewcode-back" href="../../ambrose.html#ambrose.traj_to_poses.pose_from_amber_params">[docs]</a><span class="k">def</span> <span class="nf">pose_from_amber_params</span><span class="p">(</span><span class="n">crd_path</span><span class="p">,</span> <span class="n">top_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Takes an AMBER coordinates and topology file and creates a pose from them</span>
+<span class="sd">    with `TrajToPoses`_. If the coordinates contain multiple frames, it takes</span>
+<span class="sd">    either the first one, or the one specified by the argument ``index``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    crd_path : str</span>
+<span class="sd">        Path to the input .rst7 or .nc file.</span>
+<span class="sd">    top_path : str</span>
+<span class="sd">        Path to the input .parm7 file.</span>
+<span class="sd">    index : int, optional</span>
+<span class="sd">        The index of the frame to use from the trajectory. 0 by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rosetta.core.Pose</span>
+<span class="sd">        The pose corresponding to the given input files.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="n">TrajToPoses</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">iterload</span><span class="p">(</span><span class="n">crd_path</span><span class="p">,</span> <span class="n">top_path</span><span class="p">))[</span><span class="n">index</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

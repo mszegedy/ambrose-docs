@@ -1,0 +1,612 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose.pose_to_traj &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ambrose.pose_to_traj</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ambrose.pose_to_traj</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Functions involved in the creation of AMBER simulations based on poses.</span>
+<span class="sd">Notably, many functions, such as `run_md`_, deal with pure AMBER. `run_md`_ in</span>
+<span class="sd">particular is, however, the only way to actually run minimizations and</span>
+<span class="sd">simulations, so it belongs in this family.&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># pragma pylint: disable=import-error</span>
+<span class="kn">import</span> <span class="nn">pyrosetta</span> <span class="k">as</span> <span class="nn">pr</span>
+<span class="c1"># pragma pylint: enable=import-error</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">consts</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">errors</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">enums</span>
+
+<span class="c1">### Backend utilities</span>
+
+<span class="k">def</span> <span class="nf">_heavy_atom_mask</span><span class="p">(</span><span class="n">pose</span><span class="p">):</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">AtomID_Map_bool</span><span class="p">()</span>
+    <span class="n">mask</span><span class="o">.</span><span class="n">default_value</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">pose</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+    <span class="n">mask</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">pose</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">natoms</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">natoms</span><span class="p">()</span>
+        <span class="n">mask</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">natoms</span><span class="p">)</span>
+        <span class="n">nheavyatoms</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">nheavyatoms</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">natoms</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="n">nheavyatoms</span><span class="p">:</span>
+                <span class="n">mask</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">pr</span><span class="o">.</span><span class="n">AtomID</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mask</span>
+
+<span class="k">class</span> <span class="nc">_NullContextManager</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Does absolutely nothing when used as a context manager. Equivalent to</span>
+<span class="sd">    Python 3.7&#39;s ``nullcontext`` class from the module ``contextlib``.&#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<span class="c1">### Front-facing utilities</span>
+
+<div class="viewcode-block" id="amber_bin"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.amber_bin">[docs]</a><span class="k">def</span> <span class="nf">amber_bin</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Get the path to the folder where AMBRose looks for AMBER binaries.&#39;&#39;&#39;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AMBERHOME&#39;</span><span class="p">],</span> <span class="s1">&#39;bin&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;$AMBERHOME is not set in your shell environment! Better hope &#39;</span>
+              <span class="s1">&#39;all the AMBER executables are in your $PATH. (They should be in &#39;</span>
+              <span class="s1">&#39;$AMBERHOME/bin.)&#39;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span></div>
+
+<div class="viewcode-block" id="dump_amber_pdb"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.dump_amber_pdb">[docs]</a><span class="k">def</span> <span class="nf">dump_amber_pdb</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span> <span class="n">pdb_path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;From a Pose, dump a PDB suitable for input into AMBER. Currently just</span>
+<span class="sd">    dumps it normally, but without hydrogens.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pose : rosetta.core.Pose</span>
+<span class="sd">        The pose to dump.</span>
+<span class="sd">    pdb_path : str</span>
+<span class="sd">        The path at which to dump it.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># map residue base names to their 3-letter codes in the AMBER naming scheme:</span>
+    <span class="n">amber_names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;CYS:disulfide&#39;</span><span class="p">:</span> <span class="s1">&#39;CYX&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;CYZ&#39;</span><span class="p">:</span>           <span class="s1">&#39;CYM&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HIS_D&#39;</span><span class="p">:</span>         <span class="s1">&#39;HID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HIS&#39;</span><span class="p">:</span>           <span class="s1">&#39;HIE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HPR&#39;</span><span class="p">:</span>           <span class="s1">&#39;HYP&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">residue_types</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">pose</span><span class="o">.</span><span class="n">conformation</span><span class="p">()</span> \
+                               <span class="o">.</span><span class="n">residue_type_set_for_conf</span><span class="p">()</span> \
+                               <span class="o">.</span><span class="n">name_map</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> \
+                     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">amber_names</span><span class="p">}</span>
+    <span class="c1"># save original residue names:</span>
+    <span class="n">original_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">name3</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">residue_types</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="c1"># change the names of all the special residues to the AMBER ones:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">residue_type</span> <span class="ow">in</span> <span class="n">residue_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">residue_type</span><span class="o">.</span><span class="n">name3</span><span class="p">(</span><span class="n">amber_names</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+    <span class="c1"># actually dump file:</span>
+    <span class="c1">#pylint: disable=protected-access</span>
+    <span class="n">fstream</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">ofstream</span><span class="p">(</span><span class="n">pdb_path</span><span class="p">,</span>
+                                      <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">_Ios_Openmode</span><span class="o">.</span><span class="n">_S_out</span><span class="p">)</span>
+    <span class="n">pr</span><span class="o">.</span><span class="n">rosetta</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">pdb</span><span class="o">.</span><span class="n">dump_pdb</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span> <span class="n">fstream</span><span class="p">,</span> <span class="n">_heavy_atom_mask</span><span class="p">(</span><span class="n">pose</span><span class="p">))</span>
+    <span class="c1"># change them back:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">residue_type</span> <span class="ow">in</span> <span class="n">residue_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">residue_type</span><span class="o">.</span><span class="n">name3</span><span class="p">(</span><span class="n">original_names</span><span class="p">[</span><span class="n">name</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="dict_to_namelist_str"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.dict_to_namelist_str">[docs]</a><span class="k">def</span> <span class="nf">dict_to_namelist_str</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;cntrl&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Dumps a single-group FORTRAN 77 NAMELIST for a dict, as a string. The</span>
+<span class="sd">    string has a trailing newline, to aid concatenation of groups, and to</span>
+<span class="sd">    make it easier to save as a file. It doesn&#39;t do arrays.</span>
+
+<span class="sd">    Note that if you just dump the string directly to a file, then it can&#39;t</span>
+<span class="sd">    be used as an mdin NAMELIST file for sander, because sander treats the</span>
+<span class="sd">    first line as a title, while here the first line is already the group</span>
+<span class="sd">    name. You need to concatenate a newline to the front of the string, if</span>
+<span class="sd">    you are going to dump it to a file. The same applies to pmemd.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    d : dict</span>
+<span class="sd">        The dict containing the record names and values for the NAMELIST</span>
+<span class="sd">        records. Keys should be strings containing valid record names</span>
+<span class="sd">        (satisfying the regular expression /[A-Za-z][A-Za-z0-9_]{0,30}/), while</span>
+<span class="sd">        values should be anything that can be cast to a FORTRAN 77 data type that</span>
+<span class="sd">        isn&#39;t an array (ints, floats, strings, booleans).</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        The name of the group to be output. Must be a valid group name</span>
+<span class="sd">        (satisfying the regular expression /[A-Za-z][A-Za-z0-9_]{0,30}/).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A string of your created NAMELIST group. Has a trailing, but not a</span>
+<span class="sd">        leading newline.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">valid_id_matcher</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[A-Za-z][A-Za-z0-9_]{0,30}&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">valid_id_matcher</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> \
+           <span class="s1">&#39;Invalid identifier for name of group.&#39;</span>
+    <span class="k">assert</span> <span class="kc">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">valid_id_matcher</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> \
+           <span class="s1">&#39;Invalid identifier for one or more keys in input dict.&#39;</span>
+    <span class="n">to_output</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="s1">&#39;&amp;</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">keys_and_values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">keys_and_values</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">to_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;  </span><span class="si">{key}</span><span class="s1"> = {fortran_str(value)},&#39;</span><span class="p">)</span>
+    <span class="c1"># make sure the last entry doesn&#39;t have a comma:</span>
+    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">keys_and_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">to_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;  </span><span class="si">{key}</span><span class="s1"> = {fortran_str(value)}&#39;</span><span class="p">)</span>
+    <span class="n">to_output</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;&amp;end&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">to_output</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="dict_to_namelist_file"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.dict_to_namelist_file">[docs]</a><span class="k">def</span> <span class="nf">dict_to_namelist_file</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;cntrl&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Creates a single-group FORTRAN 77 NAMELIST file for a given dict of</span>
+<span class="sd">    key-value pairs ``d`` and a given group name ``name``. The file is saved at</span>
+<span class="sd">    ``path``. Depends on the function `dict_to_namelist_str()`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    d : dict</span>
+<span class="sd">        The dict containing the record names and values for the NAMELIST</span>
+<span class="sd">        records. Keys should be strings containing valid record names</span>
+<span class="sd">        (satisfying the regular expression /[A-Za-z][A-Za-z0-9_]{0,30}/), while</span>
+<span class="sd">        values should be anything that can be cast to a FORTRAN 77 data type that</span>
+<span class="sd">        isn&#39;t an array (ints, floats, strings, booleans).</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The path at which the output file is to be saved.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        The name of the group to be output. Must be a valid group name</span>
+<span class="sd">        (satisfying the regular expression /[A-Za-z][A-Za-z0-9_]{0,30}/).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">dict_to_namelist_str</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="fortran_str"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.fortran_str">[docs]</a><span class="k">def</span> <span class="nf">fortran_str</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts ints, floats, bools, and strings into strings of analogous</span>
+<span class="sd">    FORTRAN 77 literals. Strings must naturally only consist of ASCII, and as a</span>
+<span class="sd">    further constraint must also only contain printable characters.&#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;.TRUE.&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;.FALSE.&#39;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">to_output</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&#39;&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">:</span>
+                <span class="n">to_output</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">to_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="n">to_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">to_output</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">to_output</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">to_output</span><span class="o">.</span><span class="n">isascii</span><span class="p">()</span> <span class="ow">and</span> <span class="n">to_output</span><span class="o">.</span><span class="n">isprintable</span><span class="p">(),</span> \
+               <span class="s1">&#39;Strings must consist of printable ASCII characters only.&#39;</span>
+        <span class="k">return</span> <span class="n">to_output</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can only convert ints, floats, bools, and certain &#39;</span>
+                     <span class="s1">&#39;strings.&#39;</span><span class="p">)</span></div>
+
+<span class="c1">### The money functions</span>
+
+<div class="viewcode-block" id="pose_to_amber_params"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.pose_to_amber_params">[docs]</a><span class="k">def</span> <span class="nf">pose_to_amber_params</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span> <span class="n">crd_path</span><span class="p">,</span> <span class="n">top_path</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="s1">&#39;leap.log&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                         <span class="n">leap_script_dump_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">solvent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">solvent_shape</span><span class="o">=</span><span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">OCT</span><span class="p">,</span> <span class="n">add_ions</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Writes a .rst7 input coordinates file and a .parm7 topology file for</span>
+<span class="sd">    input into sander or pmemd, based on a Rosetta Pose, by invoking LEaP.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pose : rosetta.core.Pose</span>
+<span class="sd">        The input pose.</span>
+<span class="sd">    crd_path : str</span>
+<span class="sd">        Path to the output .rst7 file.</span>
+<span class="sd">    top_path : str</span>
+<span class="sd">        Path to the output .parm7 file.</span>
+<span class="sd">    log_path : str, optional</span>
+<span class="sd">        Path to the output LEaP log file. Default is ``leap.log`` in the current</span>
+<span class="sd">        directory. Due to a how LEaP&#39;s header scripts for proteins function,</span>
+<span class="sd">        this command actually barely does anything at all, at the moment; most</span>
+<span class="sd">        of the log will still be dumped in the current working directory under</span>
+<span class="sd">        the filename ``leap.log``, regardless of your settings.</span>
+<span class="sd">    leap_script_dump_path : str or None, optional</span>
+<span class="sd">        Path to dump the generated LEaP script at. Default is None.</span>
+<span class="sd">    solvent : Solvent or None, optional</span>
+<span class="sd">        What explicit solvent to use, if any. See the `Solvent`_ class for your</span>
+<span class="sd">        options. None by default.</span>
+<span class="sd">    solvent_shape : SolventShape, optional</span>
+<span class="sd">        What shape to use for the explicit solvent box, if any. See the</span>
+<span class="sd">        `SolventShape`_ class for your options. ``OCT`` by default.</span>
+<span class="sd">    add_ions : bool, optional</span>
+<span class="sd">        Whether to add neutralizing sodium or chloride ions in the case that</span>
+<span class="sd">        your simulation is explicit-solvent and the charge of your protein is</span>
+<span class="sd">        nonzero. True by default.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># .exists() is appropriate here rather than .isfile(), because we don&#39;t want</span>
+    <span class="c1"># to remove it even if it&#39;s a directory. I don&#39;t know what LEaP does with it</span>
+    <span class="c1"># if it already exists as a directory, however...</span>
+    <span class="n">leap_log_exists_in_current_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;leap.log&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">leap_script_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">leap_in_fd</span><span class="p">,</span> <span class="n">leap_in_path</span> <span class="o">=</span> <span class="n">leap_script_dump_path</span><span class="p">,</span> <span class="n">leap_script_dump_path</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">leap_in_fd</span><span class="p">,</span> <span class="n">leap_in_path</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span> <span class="k">as</span> <span class="n">pdb_f</span><span class="p">:</span>
+            <span class="c1">## dump the PDB we&#39;re going to feed to LEaP</span>
+            <span class="n">dump_amber_pdb</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span> <span class="n">pdb_f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+            <span class="c1">## generate and write the LEaP instructions</span>
+            <span class="n">leap_command_str</span> <span class="o">=</span> \
+                <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">AMBROSE_DIR</span><span class="p">,</span>
+                                  <span class="s1">&#39;pose-to-traj.in.prototype&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">solvent</span><span class="p">:</span>
+                <span class="n">solvent_str</span><span class="p">,</span> <span class="n">load_solvent_str</span> <span class="o">=</span> \
+                    <span class="n">pose_to_amber_params</span><span class="o">.</span><span class="n">SOLVENTS</span><span class="p">[</span><span class="n">solvent</span><span class="p">]</span>
+            <span class="n">disulfide_residues</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pose</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pose</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;CYS:disulfide&#39;</span><span class="p">:</span>
+                    <span class="n">disulfide_residues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">disulfides</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">while</span> <span class="n">disulfide_residues</span><span class="p">:</span>
+                <span class="c1"># TODO: Rewrite this to not run in O(nlogn) time; it&#39;s trash.</span>
+                <span class="n">our_r</span> <span class="o">=</span> <span class="n">disulfide_residues</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="n">other_r</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">disulfide_residues</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">pose</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">our_r</span><span class="p">)</span><span class="o">.</span><span class="n">is_bonded</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                        <span class="n">other_r</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">TopologyTypeError</span><span class="p">(</span>
+                        <span class="s1">&#39;Cystine is bonded to something other than a cystine. &#39;</span>
+                        <span class="s1">&#39;AMBRose does not support noncanonical residues yet. &#39;</span>
+                        <span class="s1">&#39;If you think that this is the only error preventing &#39;</span>
+                        <span class="s1">&#39;your project from working properly, please raise an &#39;</span>
+                        <span class="s1">&#39;issue on the rosetta/tools Github and give it the &#39;</span>
+                        <span class="s1">&#39;&quot;ambrose&quot; tag. I</span><span class="se">\&#39;</span><span class="s1">ll see what I can do about it.&#39;</span><span class="p">)</span>
+                <span class="n">disulfides</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">our_r</span><span class="p">,</span> <span class="n">other_r</span><span class="p">))</span>
+                <span class="n">disulfide_residues</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">other_r</span><span class="p">)</span>
+            <span class="n">disulfides_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;bond struct.</span><span class="si">{i}</span><span class="s1">.SG struct.</span><span class="si">{j}</span><span class="s1">.SG&#39;</span> \
+                                       <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">disulfides</span><span class="p">)</span>
+            <span class="n">solvent_shape_str</span> <span class="o">=</span> \
+                <span class="n">pose_to_amber_params</span><span class="o">.</span><span class="n">SOLVENT_SHAPES</span><span class="p">[</span><span class="n">solvent_shape</span><span class="p">]</span>
+            <span class="c1"># The following code will replace each instance of each key in the</span>
+            <span class="c1"># leap command str with its corresponding value. The keys must</span>
+            <span class="c1"># not be prefixes of each other.</span>
+            <span class="n">replacements</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;+LOG-FILE+&#39;</span><span class="p">:</span>
+                                <span class="n">log_path</span><span class="p">,</span>
+                            <span class="s1">&#39;+LOAD-SOLVENT+&#39;</span><span class="p">:</span>
+                                <span class="n">load_solvent_str</span> <span class="k">if</span> <span class="n">solvent</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;+PDB-PATH+&#39;</span><span class="p">:</span>
+                                <span class="n">pdb_f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="s1">&#39;+DISULFIDES+&#39;</span><span class="p">:</span>
+                                <span class="n">disulfides_str</span><span class="p">,</span>
+                            <span class="s1">&#39;+SOLVATEP+&#39;</span><span class="p">:</span>
+                                <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">solvent</span> <span class="k">else</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;+SOLVENT-SHAPE+&#39;</span><span class="p">:</span>
+                                <span class="n">solvent_shape_str</span> <span class="k">if</span> <span class="n">solvent</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;+SOLVENT+&#39;</span><span class="p">:</span>
+                                <span class="n">solvent_str</span> <span class="k">if</span> <span class="n">solvent</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;+ADD-IONS-P+&#39;</span><span class="p">:</span>
+                                <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">add_ions</span> <span class="ow">and</span> <span class="n">solvent</span> <span class="k">else</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;+OUT-TOP-PATH+&#39;</span><span class="p">:</span>
+                                <span class="n">top_path</span><span class="p">,</span>
+                            <span class="s1">&#39;+OUT-CRD-PATH+&#39;</span><span class="p">:</span>
+                                <span class="n">crd_path</span><span class="p">}</span>
+            <span class="n">matcher</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+                <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">,</span> <span class="n">replacements</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
+            <span class="n">leap_command_str</span> <span class="o">=</span> <span class="n">matcher</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">mo</span><span class="p">:</span> <span class="n">replacements</span><span class="p">[</span><span class="n">mo</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)],</span>
+                <span class="n">leap_command_str</span><span class="p">)</span>
+            <span class="nb">open</span><span class="p">(</span><span class="n">leap_in_fd</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">leap_command_str</span><span class="p">)</span>
+
+            <span class="c1">## get LEaP to write the file</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">amber_bin</span><span class="p">(),</span> <span class="s1">&#39;tleap&#39;</span><span class="p">),</span>
+                            <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="n">leap_in_path</span><span class="p">])</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">leap_script_dump_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">leap_in_path</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">leap_log_exists_in_current_dir</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;leap.log&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+<span class="c1">## the &quot;load&quot; commands for different solvents, used to construct the LEaP</span>
+<span class="c1">## instructions</span>
+<span class="n">pose_to_amber_params</span><span class="o">.</span><span class="n">SOLVENTS</span> <span class="o">=</span> \
+    <span class="p">{</span><span class="n">enums</span><span class="o">.</span><span class="n">Solvent</span><span class="o">.</span><span class="n">SPCE_WATER</span><span class="p">:</span>
+     <span class="p">(</span><span class="s1">&#39;SPCBOX&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;source leaprc.water.spce&#39;</span><span class="p">),</span>
+     <span class="n">enums</span><span class="o">.</span><span class="n">Solvent</span><span class="o">.</span><span class="n">TIP3P_WATER</span><span class="p">:</span>
+     <span class="p">(</span><span class="s1">&#39;TIP3PBOX&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;source leaprc.water.tip3p&#39;</span><span class="p">),</span>
+     <span class="n">enums</span><span class="o">.</span><span class="n">Solvent</span><span class="o">.</span><span class="n">METHANOL</span><span class="p">:</span>
+     <span class="p">(</span><span class="s1">&#39;MEOHBOX&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;loadoff solvents.lib</span><span class="se">\n</span><span class="s1">loadamberparams frcmod.meoh&#39;</span><span class="p">)}</span>
+<span class="n">pose_to_amber_params</span><span class="o">.</span><span class="n">SOLVENT_SHAPES</span> <span class="o">=</span> \
+    <span class="p">{</span><span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">BOX</span><span class="p">:</span> <span class="s1">&#39;box&#39;</span><span class="p">,</span>
+     <span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">OCT</span><span class="p">:</span> <span class="s1">&#39;oct&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="run_md"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_to_traj.run_md">[docs]</a><span class="k">def</span> <span class="nf">run_md</span><span class="p">(</span><span class="n">executable</span><span class="o">=</span><span class="s1">&#39;pmemd.cuda&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mdin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">mdin_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prmtop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inpcrd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">restrt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">refc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mdcrd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mdinfo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Runs an AMBER MD program (pmemd.cuda by default) with the given arguments</span>
+<span class="sd">    with the additional feature that the mdin file, which normally gives the</span>
+<span class="sd">    simulation parameters, can be replaced with a dict specifying the same</span>
+<span class="sd">    parameters. All arguments are optional, as in the sander executable; if a</span>
+<span class="sd">    value is needed but not specified, sander will assume the default (which is</span>
+<span class="sd">    the argument&#39;s name in this case).</span>
+
+<span class="sd">    If you don&#39;t want to make the mdin_dict parameters by hand, the templates_</span>
+<span class="sd">    submodule can synthesize some common formulas for you.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    executable : str, optional</span>
+<span class="sd">        The AMBER executable to run the MD with. pmemd.cuda by default.</span>
+<span class="sd">    overwrite : bool, optional</span>
+<span class="sd">        Whether to overwrite the output files if already present. Equivalent to</span>
+<span class="sd">        the ``-O`` flag in the executable.</span>
+<span class="sd">    mdin : str or None, optional</span>
+<span class="sd">        The path to the FORTRAN NAMELIST file that contains the simulation</span>
+<span class="sd">        parameters. Overridden if parameter mdin_dict is not None. Equivalent to</span>
+<span class="sd">        the ``-i`` flag in the executable.</span>
+<span class="sd">    mdin_dict : dict or None, optional</span>
+<span class="sd">        A dict encoding the FORTRAN NAMELIST file that would contain the</span>
+<span class="sd">        simulation parameters. The group name is always ``cntrl`` (hence Ewald</span>
+<span class="sd">        is currently not supported). The keys and values represent data fields</span>
+<span class="sd">        and their values respectively. If both this and ``mdin`` is set, then</span>
+<span class="sd">        the corresponding ``mdin`` file generated from the ``mdin_dict`` will be</span>
+<span class="sd">        stored at the path given for ``mdin``.</span>
+<span class="sd">        See the `templates` submodule for functions that automatically</span>
+<span class="sd">        produce ``mdin_dict``s for different situations.</span>
+<span class="sd">    mdout : str or None, optional</span>
+<span class="sd">        The path to the log file where each ``mdinfo`` is recorded. Equivalent</span>
+<span class="sd">        to the ``-o`` flag in the executable.</span>
+<span class="sd">    prmtop : str or None, optional</span>
+<span class="sd">        The path to the topology file of the structures involved in the</span>
+<span class="sd">        simulation. Equivalent to the ``-p`` flag in the executable.</span>
+<span class="sd">    inpcrd : str or None, optional</span>
+<span class="sd">        The path to the file containing the initial coordinates for the</span>
+<span class="sd">        simulation. Equivalent to the ``-c`` flag in the executable.</span>
+<span class="sd">    restrt : str or None, optional</span>
+<span class="sd">        The path to the file containing the most recently computed coordinates</span>
+<span class="sd">        and velocities for the simulation. Equivalent to the ``-r`` flag in the</span>
+<span class="sd">        executable.</span>
+<span class="sd">    refc : str or None, optional</span>
+<span class="sd">        The path to the file containing the reference coordinates for coordinate</span>
+<span class="sd">        constraints, if any. Equivalent to the ``-ref`` flag in the executable.</span>
+<span class="sd">    mdcrd : str or None, optional</span>
+<span class="sd">        The path to the file where the coordinates are output during the</span>
+<span class="sd">        simulation. Equivalent to the ``-x`` flag in the executable.</span>
+<span class="sd">    mdinfo : str or None, optional</span>
+<span class="sd">        The path to the file where some high-level data about how the simulation</span>
+<span class="sd">        is going is saved every so often. Equivalent to the ``-inf`` flag in the</span>
+<span class="sd">        executable.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Return value of the AMBER executable run.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span> <span class="k">if</span> <span class="n">mdin</span> <span class="ow">is</span> <span class="kc">None</span> \
+                                          <span class="ow">and</span> <span class="n">mdin_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+         <span class="k">else</span> <span class="n">_NullContextManager</span><span class="p">()</span> <span class="k">as</span> <span class="n">mdin_tempfile</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mdin_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mdin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mdin</span> <span class="o">=</span> <span class="n">mdin_tempfile</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">dict_to_namelist_file</span><span class="p">(</span><span class="n">mdin_dict</span><span class="p">,</span> <span class="n">mdin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;cntrl&#39;</span><span class="p">)</span>
+        <span class="n">flags_to_variables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;-i&#39;</span> <span class="p">:</span> <span class="n">mdin</span><span class="p">,</span>
+            <span class="s1">&#39;-o&#39;</span> <span class="p">:</span> <span class="n">mdout</span><span class="p">,</span>
+            <span class="s1">&#39;-p&#39;</span> <span class="p">:</span> <span class="n">prmtop</span><span class="p">,</span>
+            <span class="s1">&#39;-c&#39;</span> <span class="p">:</span> <span class="n">inpcrd</span><span class="p">,</span>
+            <span class="s1">&#39;-r&#39;</span> <span class="p">:</span> <span class="n">restrt</span><span class="p">,</span>
+            <span class="s1">&#39;-ref&#39;</span> <span class="p">:</span> <span class="n">refc</span><span class="p">,</span>
+            <span class="s1">&#39;-x&#39;</span> <span class="p">:</span> <span class="n">mdcrd</span><span class="p">,</span>
+            <span class="s1">&#39;-inf&#39;</span> <span class="p">:</span> <span class="n">mdinfo</span>
+        <span class="p">}</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-O&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">overwrite</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">flags_to_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">arguments</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">amber_bin</span><span class="p">(),</span> <span class="n">executable</span><span class="p">),</span> <span class="o">*</span><span class="n">arguments</span><span class="p">]</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">debug_print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;About to run command: </span><span class="si">{command}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">debug_print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{executable}</span><span class="s1"> run with result: </span><span class="si">{result}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

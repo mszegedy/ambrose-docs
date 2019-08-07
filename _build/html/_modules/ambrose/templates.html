@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose.templates &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ambrose.templates</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ambrose.templates</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Functions that produce template ``mdin_dict``s for various common use cases,</span>
+<span class="sd">with a nicer API than AMBER&#39;s default. To be used with either of the top-level</span>
+<span class="sd">functions run_md_ or `dict_to_namelist_file`_, if you are looking to directly</span>
+<span class="sd">run a simulation or to just create a NAMELIST file, respectively.&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="minimize_wet"><a class="viewcode-back" href="../../ambrose.html#ambrose.templates.minimize_wet">[docs]</a><span class="k">def</span> <span class="nf">minimize_wet</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Template of dict of mdin parameters for an explicit solvent minimization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cutoff : int or float, optional</span>
+<span class="sd">        Van der Waals cutoff in angstroms.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;imin&#39;</span><span class="p">:</span>   <span class="mi">1</span><span class="p">,</span> <span class="c1"># minimization on</span>
+        <span class="s1">&#39;maxcyc&#39;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+        <span class="s1">&#39;ncyc&#39;</span><span class="p">:</span>   <span class="mi">250</span><span class="p">,</span>
+        <span class="s1">&#39;cut&#39;</span><span class="p">:</span>    <span class="n">cutoff</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+<div class="viewcode-block" id="minimize_dry"><a class="viewcode-back" href="../../ambrose.html#ambrose.templates.minimize_dry">[docs]</a><span class="k">def</span> <span class="nf">minimize_dry</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Template of dict of mdin parameters for an implicit solvent minimization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cutoff : int or float, optional</span>
+<span class="sd">        Van der Waals cutoff in angstroms.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;imin&#39;</span><span class="p">:</span>   <span class="mi">1</span><span class="p">,</span> <span class="c1"># minimization on</span>
+        <span class="s1">&#39;maxcyc&#39;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+        <span class="s1">&#39;ncyc&#39;</span><span class="p">:</span>   <span class="mi">250</span><span class="p">,</span>
+        <span class="s1">&#39;ntb&#39;</span><span class="p">:</span>    <span class="mi">0</span><span class="p">,</span> <span class="c1"># periodicity off</span>
+        <span class="s1">&#39;igb&#39;</span><span class="p">:</span>    <span class="mi">1</span><span class="p">,</span> <span class="c1"># Born solvent on</span>
+        <span class="s1">&#39;cut&#39;</span><span class="p">:</span>    <span class="n">cutoff</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+<div class="viewcode-block" id="simulate_wet"><a class="viewcode-back" href="../../ambrose.html#ambrose.templates.simulate_wet">[docs]</a><span class="k">def</span> <span class="nf">simulate_wet</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">starting_temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">,</span> <span class="n">output_interval</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Template of dict of mdin parameters for an explicit solvent simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    duration : int or float</span>
+<span class="sd">        Duration of simulation in picoseconds.</span>
+<span class="sd">    temperature : int or float</span>
+<span class="sd">        Temperature of simulation in kelvins. 0 by default.</span>
+<span class="sd">    starting_temperature : int or float, optional</span>
+<span class="sd">        Starting temperature of simulation in kelvins.</span>
+<span class="sd">    cutoff : int or float</span>
+<span class="sd">        Van der Waals cutoff in angstroms.</span>
+<span class="sd">    output_interval : int or float</span>
+<span class="sd">        Amount of time to wait in between writing frames and log data, in</span>
+<span class="sd">        picoseconds.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">assert</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Duration must be specified.&#39;</span>
+    <span class="k">assert</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Temperature must be specified.&#39;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;nstlim&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+        <span class="s1">&#39;tempi&#39;</span><span class="p">:</span>  <span class="n">starting_temperature</span><span class="p">,</span>
+        <span class="s1">&#39;temp0&#39;</span><span class="p">:</span>  <span class="n">temperature</span><span class="p">,</span>
+        <span class="s1">&#39;cut&#39;</span> <span class="p">:</span>   <span class="n">cutoff</span><span class="p">,</span>
+        <span class="s1">&#39;ntt&#39;</span><span class="p">:</span>    <span class="mi">1</span><span class="p">,</span> <span class="c1"># weak coupling thermostat</span>
+        <span class="s1">&#39;ntp&#39;</span><span class="p">:</span>    <span class="mi">1</span><span class="p">,</span> <span class="c1"># constant pressure dynamics</span>
+        <span class="s1">&#39;pres0&#39;</span><span class="p">:</span>  <span class="mf">1.013</span><span class="p">,</span> <span class="c1"># 1 atm pressure</span>
+        <span class="s1">&#39;ntwx&#39;</span><span class="p">:</span>   <span class="nb">int</span><span class="p">(</span><span class="n">output_interval</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+        <span class="s1">&#39;ntpr&#39;</span><span class="p">:</span>   <span class="nb">int</span><span class="p">(</span><span class="n">output_interval</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+<div class="viewcode-block" id="simulate_dry"><a class="viewcode-back" href="../../ambrose.html#ambrose.templates.simulate_dry">[docs]</a><span class="k">def</span> <span class="nf">simulate_dry</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">starting_temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">,</span> <span class="n">output_interval</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Template of dict of mdin parameters for an implicit solvent simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    duration : int or float</span>
+<span class="sd">        Duration of simulation in picoseconds.</span>
+<span class="sd">    temperature : int or float</span>
+<span class="sd">        Temperature of simulation in kelvins.</span>
+<span class="sd">    starting_temperature : int or float, optional</span>
+<span class="sd">        Starting temperature of simulation in kelvins. 0 by default.</span>
+<span class="sd">    cutoff : int or float, optional</span>
+<span class="sd">        Van der Waals cutoff in angstroms. 15 by default.</span>
+<span class="sd">    output_interval : int or float, optional</span>
+<span class="sd">        Amount of time to wait in between writing frames and log data, in</span>
+<span class="sd">        picoseconds. 1 by default.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed to use for random operations (e.g. Langevin thermostat).</span>
+<span class="sd">        Nonnegative integers are valid seeds, while negative integers cause</span>
+<span class="sd">        the seed to be determined by the hardware.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">assert</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Duration must be specified.&#39;</span>
+    <span class="k">assert</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Temperature must be specified.&#39;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;nstlim&#39;</span><span class="p">:</span>   <span class="nb">int</span><span class="p">(</span><span class="n">duration</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+        <span class="s1">&#39;tempi&#39;</span><span class="p">:</span>    <span class="n">starting_temperature</span><span class="p">,</span>
+        <span class="s1">&#39;temp0&#39;</span><span class="p">:</span>    <span class="n">temperature</span><span class="p">,</span>
+        <span class="s1">&#39;cut&#39;</span><span class="p">:</span>      <span class="n">cutoff</span><span class="p">,</span>
+        <span class="s1">&#39;igb&#39;</span><span class="p">:</span>      <span class="mi">1</span><span class="p">,</span> <span class="c1"># Born solvent</span>
+        <span class="s1">&#39;ntt&#39;</span><span class="p">:</span>      <span class="mi">3</span><span class="p">,</span> <span class="c1"># Langevin thermostat</span>
+        <span class="s1">&#39;gamma_ln&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="c1"># Langevin collision frequency</span>
+        <span class="s1">&#39;ntwx&#39;</span><span class="p">:</span>     <span class="nb">int</span><span class="p">(</span><span class="n">output_interval</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+        <span class="s1">&#39;ntpr&#39;</span><span class="p">:</span>     <span class="nb">int</span><span class="p">(</span><span class="n">output_interval</span><span class="o">*</span><span class="mi">1000</span><span class="p">),</span>
+        <span class="s1">&#39;ig&#39;</span><span class="p">:</span>       <span class="n">seed</span>
+    <span class="p">}</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

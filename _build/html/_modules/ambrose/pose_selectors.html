@@ -1,0 +1,261 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose.pose_selectors &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ambrose.pose_selectors</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ambrose.pose_selectors</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Functions for selecting Poses from (indexable) sequences of Poses, to be used</span>
+<span class="sd">for the ``pose_selector`` attribute of `AMBERMover`_s that have one.&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">pyrosetta</span> <span class="k">as</span> <span class="nn">pr</span> <span class="c1"># pylint: disable=import-error</span>
+
+<div class="viewcode-block" id="last"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_selectors.last">[docs]</a><span class="k">def</span> <span class="nf">last</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Returns the last Pose in a sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l : list or TrajToPoses</span>
+<span class="sd">        A sequence (indexable object) containing Poses that you want to select a</span>
+<span class="sd">        Pose from.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rosetta.core.Pose</span>
+<span class="sd">        The selected Pose from the given list.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="lowest_energy_from_end"><a class="viewcode-back" href="../../ambrose.html#ambrose.pose_selectors.lowest_energy_from_end">[docs]</a><span class="k">def</span> <span class="nf">lowest_energy_from_end</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Returns the lowest energy Pose in roughly the rightmost half of a</span>
+<span class="sd">    sequence. The region that the Pose is selected from will contain at minimum</span>
+<span class="sd">    the rightmost 1/e of the list, and is extended leftwards until a Pose is</span>
+<span class="sd">    reached that is more than 2 standard deviations from the average of the</span>
+<span class="sd">    rightmost 1/e (this Pose is excluded).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l : list or TrajToPoses</span>
+<span class="sd">        A sequence (indexable object) containing Poses that you want to select a</span>
+<span class="sd">        Pose from.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rosetta.core.Pose</span>
+<span class="sd">        The selected Pose from the given list.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input list must have at least one element.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">scorefxn</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">get_fa_scorefxn</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">scorefxn</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">pose</span><span class="p">)</span> <span class="k">for</span> <span class="n">pose</span> <span class="ow">in</span> <span class="n">l</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="n">energies</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">))]</span>
+    <span class="n">start_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">*</span><span class="mf">0.63212</span><span class="p">)</span>
+    <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># let&#39;s not assume l is sliceable, although both lists and TrajToPoses</span>
+    <span class="c1"># objects are. also we&#39;re building the list backwards because we&#39;re gonna</span>
+    <span class="c1"># append Poses with earlier indices to it later</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_index</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scorefxn</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+    <span class="c1"># this would be easier with numpy but I don&#39;t want to introduce a</span>
+    <span class="c1"># dependency just to do a mean and a standard deviation</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">((</span><span class="n">e</span><span class="o">-</span><span class="n">mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">energies</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">energies</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">start_index</span> <span class="o">-=</span> <span class="mi">1</span> <span class="c1"># guaranteed &gt;= 0 since len(l) &gt; 1</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">next_energy</span> <span class="o">=</span> <span class="n">scorefxn</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">start_index</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">next_energy</span><span class="o">-</span><span class="n">mean</span><span class="p">)</span><span class="o">/</span><span class="n">std</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_energy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start_index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">start_index</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="c1"># the lowest energy is basically guaranteed to be unique, so this is okay:</span>
+    <span class="n">min_index</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">l</span><span class="p">[</span><span class="n">start_index</span> <span class="o">+</span> <span class="n">min_index</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

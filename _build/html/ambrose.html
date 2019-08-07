@@ -1,0 +1,1187 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose package &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">ambrose package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-ambrose.consts">ambrose.consts module</a></li>
+<li><a class="reference internal" href="#module-ambrose.enums">ambrose.enums module</a></li>
+<li><a class="reference internal" href="#module-ambrose.errors">ambrose.errors module</a></li>
+<li><a class="reference internal" href="#module-ambrose.movers">ambrose.movers module</a></li>
+<li><a class="reference internal" href="#module-ambrose.pose_selectors">ambrose.pose_selectors module</a></li>
+<li><a class="reference internal" href="#module-ambrose.pose_to_traj">ambrose.pose_to_traj module</a></li>
+<li><a class="reference internal" href="#module-ambrose.templates">ambrose.templates module</a></li>
+<li><a class="reference internal" href="#module-ambrose.traj_to_poses">ambrose.traj_to_poses module</a></li>
+<li><a class="reference internal" href="#module-ambrose.utils">ambrose.utils module</a></li>
+<li><a class="reference internal" href="#module-ambrose.validation">ambrose.validation module</a></li>
+<li><a class="reference internal" href="#module-ambrose">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>ambrose package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/ambrose.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ambrose-package">
+<h1>ambrose package<a class="headerlink" href="#ambrose-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-ambrose.consts">
+<span id="ambrose-consts-module"></span><h2>ambrose.consts module<a class="headerlink" href="#module-ambrose.consts" title="Permalink to this headline">¶</a></h2>
+<p>Constants used by other submodules of AMBRose.</p>
+</div>
+<div class="section" id="module-ambrose.enums">
+<span id="ambrose-enums-module"></span><h2>ambrose.enums module<a class="headerlink" href="#module-ambrose.enums" title="Permalink to this headline">¶</a></h2>
+<p>Enums for specifying options (currently solvent options) for AMBERMovers.</p>
+<dl class="class">
+<dt id="ambrose.enums.Solvent">
+<em class="property">class </em><code class="descclassname">ambrose.enums.</code><code class="descname">Solvent</code><a class="reference internal" href="_modules/ambrose/enums.html#Solvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.enums.Solvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>A solvent choice for anything that requires you to set or provide a
+solvent, like <a href="#id11"><span class="problematic" id="id12">`pose_to_amber_params`_</span></a> or <a href="#id13"><span class="problematic" id="id14">`AMBERSimulateMover`_</span></a>. Can be:</p>
+<dl class="docutils">
+<dt>SPCE_WATER</dt>
+<dd>SPC/E (extended simple point charge) waters.</dd>
+<dt>TIP3P_WATER</dt>
+<dd>TIP3P (transferable intramolecular potential with 3 points) waters.</dd>
+<dt>METHANOL</dt>
+<dd>Methanol.</dd>
+</dl>
+<dl class="attribute">
+<dt id="ambrose.enums.Solvent.METHANOL">
+<code class="descname">METHANOL</code><em class="property"> = 'METHANOL'</em><a class="headerlink" href="#ambrose.enums.Solvent.METHANOL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.enums.Solvent.SPCE_WATER">
+<code class="descname">SPCE_WATER</code><em class="property"> = 'SPCE_WATER'</em><a class="headerlink" href="#ambrose.enums.Solvent.SPCE_WATER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.enums.Solvent.TIP3P_WATER">
+<code class="descname">TIP3P_WATER</code><em class="property"> = 'TIP3P_WATER'</em><a class="headerlink" href="#ambrose.enums.Solvent.TIP3P_WATER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ambrose.enums.SolventShape">
+<em class="property">class </em><code class="descclassname">ambrose.enums.</code><code class="descname">SolventShape</code><a class="reference internal" href="_modules/ambrose/enums.html#SolventShape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.enums.SolventShape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>The choice of shape for the periodic boundaries you’re using for an
+explicit-solvent simulation, for anything that requires you to set or
+provide it, like <a href="#id15"><span class="problematic" id="id16">`pose_to_amber_params`_</span></a> or <a href="#id17"><span class="problematic" id="id18">`AMBERSimulateMover`_</span></a>. Can be:</p>
+<dl class="docutils">
+<dt>BOX</dt>
+<dd>Rectangular prism.</dd>
+<dt>OCT</dt>
+<dd>Truncated octahedron.</dd>
+</dl>
+<dl class="attribute">
+<dt id="ambrose.enums.SolventShape.BOX">
+<code class="descname">BOX</code><em class="property"> = 'BOX'</em><a class="headerlink" href="#ambrose.enums.SolventShape.BOX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.enums.SolventShape.OCT">
+<code class="descname">OCT</code><em class="property"> = 'OCT'</em><a class="headerlink" href="#ambrose.enums.SolventShape.OCT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.errors">
+<span id="ambrose-errors-module"></span><h2>ambrose.errors module<a class="headerlink" href="#module-ambrose.errors" title="Permalink to this headline">¶</a></h2>
+<p>AMBRose-specific exceptions, to do with errors during conversion between
+Rosetta and AMBER.</p>
+<dl class="exception">
+<dt id="ambrose.errors.AMBERError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">AMBERError</code><a class="reference internal" href="_modules/ambrose/errors.html#AMBERError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.AMBERError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+<p>An error encountered when an AMBER utility fails in some way.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ambrose.errors.AMBERFileError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">AMBERFileError</code><a class="reference internal" href="_modules/ambrose/errors.html#AMBERFileError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.AMBERFileError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+<p>An error encountered when an AMBER utility fails to produce a file.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ambrose.errors.TopologyError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">TopologyError</code><a class="reference internal" href="_modules/ambrose/errors.html#TopologyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.TopologyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+<p>An error encountered when there’s something wrong with a topology.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ambrose.errors.TopologyParsingError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">TopologyParsingError</code><a class="reference internal" href="_modules/ambrose/errors.html#TopologyParsingError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.TopologyParsingError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ambrose.errors.TopologyError" title="ambrose.errors.TopologyError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ambrose.errors.TopologyError</span></code></a></p>
+<p>An error encountered when a topology cannot be parsed for conversion.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ambrose.errors.TopologySizeError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">TopologySizeError</code><a class="reference internal" href="_modules/ambrose/errors.html#TopologySizeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.TopologySizeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ambrose.errors.TopologyError" title="ambrose.errors.TopologyError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ambrose.errors.TopologyError</span></code></a></p>
+<p>An error encountered when a topology has the wrong number of residues or
+atoms.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ambrose.errors.TopologyTypeError">
+<em class="property">exception </em><code class="descclassname">ambrose.errors.</code><code class="descname">TopologyTypeError</code><a class="reference internal" href="_modules/ambrose/errors.html#TopologyTypeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.errors.TopologyTypeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ambrose.errors.TopologyError" title="ambrose.errors.TopologyError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ambrose.errors.TopologyError</span></code></a></p>
+<p>An error encountered when a topology has the wrong kind of residues.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.movers">
+<span id="ambrose-movers-module"></span><h2>ambrose.movers module<a class="headerlink" href="#module-ambrose.movers" title="Permalink to this headline">¶</a></h2>
+<p>The _AMBERMovers and their supporting functions and classes. These fake
+movers all convert a Pose to AMBER params, do something with them in AMBER
+(either a minimization or simulation, so far), and replace the Pose with
+the result in some way.</p>
+<dl class="class">
+<dt id="ambrose.movers.AMBERMinMover">
+<em class="property">class </em><code class="descclassname">ambrose.movers.</code><code class="descname">AMBERMinMover</code><span class="sig-paren">(</span><em>working_dir=''</em>, <em>prefix=None</em>, <em>solvent=None</em>, <em>solvent_shape=&lt;SolventShape.OCT: 'OCT'&gt;</em>, <em>cutoff=15.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/movers.html#AMBERMinMover"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.movers.AMBERMinMover" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ambrose.movers._AMBERMover</span></code></p>
+<p>A Mover-like object that uses pmemd.cuda to minimize a pose.</p>
+<p>Intermediate files are stored by default in the working directory, prefixed
+with a timestamp. The directory and prefix may be overridden. Output of the
+files can be turned off altogether by setting the directory to <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+although the files will still be output intermediately and cleaned up at the
+end. Here is a list of all files output by this mover:</p>
+<dl class="docutils">
+<dt>&lt;prefix&gt;-leap.log</dt>
+<dd>The log file where the LEaP output for the conversion of the pose(s)
+to AMBER input files is recorded.</dd>
+<dt>&lt;prefix&gt;-prmtop.parm7</dt>
+<dd>The topology file describing the chemistry and connectivity of the
+protein(s) in your minimization, generated by LEaP.</dd>
+<dt>&lt;prefix&gt;-inpcrd.rst7</dt>
+<dd>The initial coordinates for your minimization, generated by LEaP.</dd>
+<dt>&lt;prefix&gt;-min-mdin.in</dt>
+<dd>The FORTRAN NAMELIST file that contains the minimization parameters.</dd>
+<dt>&lt;prefix&gt;-min-mdout.out</dt>
+<dd>The log file where each <code class="docutils literal notranslate"><span class="pre">mdinfo</span></code> is recorded during the minimization.</dd>
+<dt>&lt;prefix&gt;-min-mdinfo</dt>
+<dd>The log file where high-level information about the current state of the
+minimization is recorded.</dd>
+<dt>&lt;prefix&gt;-min-restrt.nc</dt>
+<dd>The latest coordinates for your minimization. After the minimization is
+over, this gives the new coordinates for your input Pose.</dd>
+</dl>
+<p>The following file may additionally be output if a reference Pose (with
+necessarily the same topology as your simulated Pose) is specified:</p>
+<dl class="docutils">
+<dt>&lt;prefix&gt;-refc.rst7</dt>
+<dd>The coordinates of the reference structure, generated by LEaP.</dd>
+</dl>
+<p>Member variables are Python properties, as opposed to being accessed via
+getters and setters as in a traditional Mover. See the getters for their
+documentation, or see the constructor parameters given below, which
+correspond to member variables.</p>
+<p>This object provides, but does not implement or document, all the methods of
+the base Mover class. The only method from the base class that actually
+works is <a href="#id19"><span class="problematic" id="id20">`apply`_</span></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>working_dir</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The directory to place the intermediate files in. Defaults to the
+current working directory. If set to None, intermediate files will
+be output to a temporary directory, and deleted once the mover has
+finished running. (This is not recommended, especially if you’re running
+the mover multiple times on the same structure.)</li>
+<li><strong>prefix</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The prefix of the intermediate files output by the simulation. If set to
+None, will use the timestamp at which <a href="#id21"><span class="problematic" id="id22">`apply`_</span></a> was called.</li>
+<li><strong>solvent</strong> (<a class="reference internal" href="#ambrose.enums.Solvent" title="ambrose.enums.Solvent"><em>Solvent</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – The type of solvent to use for an explicit-solvent simulation, if any.
+If this is set to None, an implicit-solvent simulation will be performed
+instead. None by default.</li>
+<li><strong>solvent_shape</strong> (<a class="reference internal" href="#ambrose.enums.SolventShape" title="ambrose.enums.SolventShape"><em>SolventShape</em></a><em>, </em><em>optional</em>) – The shape of solvent to use for an explicit-solvent simulation. <code class="docutils literal notranslate"><span class="pre">OCT</span></code>
+by default.</li>
+<li><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Van der Waals cutoff in angstroms. 15 by default.</li>
+<li><strong>ref_pose</strong> (<em>rosetta.core.Pose</em><em>, </em><em>optional</em>) – Reference pose to give coordinate constraints, if any. It is safe to
+use the pose that you are operating on for this purpose, if you want
+to constrain the pose to its original coordinates.</li>
+<li><strong>cst_mask</strong> (<em>str</em><em>, </em><em>optional</em>) – Atom mask specifying which atoms are affected by the coordinate
+constraints. Given in ambmask syntax; see section 19.1 of the 2019
+AMBER manual, on page 410.</li>
+<li><strong>cst_weight</strong> (<em>float</em><em>, </em><em>optional</em>) – Weight of coordinate constraints, in kcal/mol/angstroms^2.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="ambrose.movers.AMBERMinMover.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>pose</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/movers.html#AMBERMinMover.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.movers.AMBERMinMover.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimize the given pose using pmemd.cuda.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pose</strong> (<em>rosetta.core.Pose</em>) – Pose to minimize.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERMinMover.name">
+<code class="descname">name</code><a class="headerlink" href="#ambrose.movers.AMBERMinMover.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of Mover.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ambrose.movers.AMBERSimulateMover">
+<em class="property">class </em><code class="descclassname">ambrose.movers.</code><code class="descname">AMBERSimulateMover</code><span class="sig-paren">(</span><em>working_dir=''</em>, <em>prefix=None</em>, <em>solvent=None</em>, <em>solvent_shape=&lt;SolventShape.OCT: 'OCT'&gt;</em>, <em>duration=None</em>, <em>temperature=None</em>, <em>starting_temperature=0</em>, <em>cutoff=15.0</em>, <em>output_interval=1.0</em>, <em>seed=-1</em>, <em>ref_pose=None</em>, <em>cst_mask=None</em>, <em>cst_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/movers.html#AMBERSimulateMover"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ambrose.movers._AMBERMover</span></code></p>
+<p>A Mover-like object that uses pmemd.cuda to minimize and then simulate a
+pose, ultimately overwriting it with a frame from the simulation’s
+trajectory.</p>
+<p>Intermediate files are stored by default in the working directory, prefixed
+with a timestamp. The directory and prefix may be overridden. Output of the
+files can be turned off altogether by setting the directory to <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+although the files will still be output intermediately and cleaned up at the
+end. Here is a list of all files output by this mover:</p>
+<dl class="docutils">
+<dt>&lt;prefix&gt;-leap.log</dt>
+<dd>The log file where the LEaP output for the conversion of the pose(s)
+to AMBER input files is recorded.</dd>
+<dt>&lt;prefix&gt;-prmtop.parm7</dt>
+<dd>The topology file describing the chemistry and connectivity of the
+protein(s) in your simulation, generated by LEaP.</dd>
+<dt>&lt;prefix&gt;-inpcrd.rst7</dt>
+<dd>The initial coordinates for your minimization, generated by LEaP.</dd>
+<dt>&lt;prefix&gt;-min-mdin.in</dt>
+<dd>The FORTRAN NAMELIST file that contains the minimization parameters.</dd>
+<dt>&lt;prefix&gt;-min-mdout.out</dt>
+<dd>The log file where each <code class="docutils literal notranslate"><span class="pre">mdinfo</span></code> is recorded during the minimization.</dd>
+<dt>&lt;prefix&gt;-min-mdinfo</dt>
+<dd>The log file where high-level information about the current state of the
+minimization is recorded.</dd>
+<dt>&lt;prefix&gt;-min-restrt.nc</dt>
+<dd>The latest coordinates for your minimization. After the minimization is
+over, this gives the starting coordinates for your simulation.</dd>
+<dt>&lt;prefix&gt;-mdin.in</dt>
+<dd>The FORTRAN NAMELIST file that contains the simulation parameters.</dd>
+<dt>&lt;prefix&gt;-mdout.out</dt>
+<dd>The log file where each <code class="docutils literal notranslate"><span class="pre">mdinfo</span></code> is recorded during the simulation.</dd>
+<dt>&lt;prefix&gt;-mdinfo</dt>
+<dd>The log file where high-level information about the current state of the
+simulation is recorded.</dd>
+<dt>&lt;prefix&gt;-restrt.nc</dt>
+<dd>The latest coordinates and velocities for your simulation.</dd>
+<dt>&lt;prefix&gt;-mdcrd.nc</dt>
+<dd>The frames for your simulation’s trajectory. Your Pose’s new
+conformation will be selected from among these by <a href="#id23"><span class="problematic" id="id24">`pose_selector`_</span></a>.</dd>
+</dl>
+<p>The following file may additionally be output if a reference Pose (with
+necessarily the same topology as your simulated Pose) is specified:</p>
+<dl class="docutils">
+<dt>&lt;prefix&gt;-refc.rst7</dt>
+<dd>The coordinates of the reference structure, generated by LEaP.</dd>
+</dl>
+<p>Member variables are Python properties, as opposed to being accessed via
+getters and setters as in a traditional Mover. See the getters for their
+documentation, or see the constructor parameters given below, which
+correspond to member variables. The only writable member variable that does
+not appear in the constructor as a parameter is <a href="#id25"><span class="problematic" id="id26">`pose_selector`_</span></a>, which is
+the function that determines which frame to use from the simulated
+trajectory to overwrite the input Pose.</p>
+<p>This object provides, but does not implement or document, all the methods
+of the base Mover class. See the documentation for the class <a href="#id27"><span class="problematic" id="id28">`_NotAMover`_</span></a>
+for more info.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>working_dir</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The directory to place the intermediate files in. Defaults to the
+current working directory. If set to None, intermediate files will
+be output to a temporary directory, and deleted once the mover has
+finished running. (This is not recommended, especially if you’re running
+the mover multiple times on the same structure.)</li>
+<li><strong>prefix</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The prefix of the intermediate files output by the simulation. If set to
+None, will use the timestamp at which <a href="#id29"><span class="problematic" id="id30">`apply`_</span></a> was called.</li>
+<li><strong>solvent</strong> (<a class="reference internal" href="#ambrose.enums.Solvent" title="ambrose.enums.Solvent"><em>Solvent</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – The type of solvent to use for an explicit-solvent simulation, if any.
+If this is set to None, an implicit-solvent simulation will be performed
+instead. None by default.</li>
+<li><strong>solvent_shape</strong> (<a class="reference internal" href="#ambrose.enums.SolventShape" title="ambrose.enums.SolventShape"><em>SolventShape</em></a><em>, </em><em>optional</em>) – The shape of solvent to use for an explicit-solvent simulation. <code class="docutils literal notranslate"><span class="pre">OCT</span></code>
+by default.</li>
+<li><strong>duration</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Duration of simulation in picoseconds. Must be set before the simulation
+runs.</li>
+<li><strong>temperature</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Temperature of simulation in kelvins. Must be set before the simulation
+runs.</li>
+<li><strong>starting_temperature</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Starting temperature of simulation in kelvins. 0 by default.</li>
+<li><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Van der Waals cutoff in angstroms. 15 by default.</li>
+<li><strong>output_interval</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Amount of time to wait in between writing frames and log data, in
+picoseconds. 1 by default.</li>
+<li><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed to use for random operations (e.g. Langevin thermostat).
+Nonnegative integers are valid seeds, while negative integers cause
+the seed to be determined by the hardware.</li>
+<li><strong>ref_pose</strong> (<em>rosetta.core.Pose</em><em>, </em><em>optional</em>) – Reference pose to give coordinate constraints, if any. It is safe to
+use the pose that you are operating on for this purpose, if you want
+to constrain the pose to its original coordinates.</li>
+<li><strong>cst_mask</strong> (<em>str</em><em>, </em><em>optional</em>) – Atom mask specifying which atoms are affected by the coordinate
+constraints. Given in ambmask syntax; see section 19.1 of the 2019
+AMBER manual, on page 410.</li>
+<li><strong>cst_weight</strong> (<em>float</em><em>, </em><em>optional</em>) – Weight of coordinate constraints, in kcal/mol/angstroms^2.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="ambrose.movers.AMBERSimulateMover.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>pose</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/movers.html#AMBERSimulateMover.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimize, then simulate the given pose using pmemd.cuda. Replace the
+Pose with a frame from the simulation selected by this mover’s
+<a href="#id31"><span class="problematic" id="id32">`pose_selector`_</span></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pose</strong> (<em>rosetta.core.Pose</em>) – Pose to minimize and simulate.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.duration">
+<code class="descname">duration</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Duration of simulation in picoseconds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int or float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.name">
+<code class="descname">name</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of Mover.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.output_interval">
+<code class="descname">output_interval</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.output_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Amount of in-simulation time to wait in between writing
+successive frames and log data, in picoseconds. 1 by default.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int or float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.pose_selector">
+<code class="descname">pose_selector</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.pose_selector" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that selects which frame of the simulated
+trajectory to use to overwrite your input Pose when <a href="#id33"><span class="problematic" id="id34">`apply`_</span></a> is called.
+In practice, it can be any function that takes an ordered list of Poses
+and returns one of them, since it operates on a <a href="#id35"><span class="problematic" id="id36">`TrajToPoses`_</span></a> object
+and returns one of its entries. By default, it’s equal to the function
+<a href="#id37"><span class="problematic" id="id38">`last`_</span></a> from the submodule <a href="#id39"><span class="problematic" id="id40">`pose_selectors`_</span></a>, which selects the last
+frame of the trajectory; there is also the more sophisticated option of
+<a href="#id41"><span class="problematic" id="id42">`lowest_energy_from_end`_</span></a> available from the same module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.seed">
+<code class="descname">seed</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Seed to use for random operations (in our case, the Langevin
+thermostat, if it’s a wet simulation). Nonnegative integers are valid
+seeds, while negative integers cause the seed to be determined by the
+hardware. -1 by default.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ambrose.movers.AMBERSimulateMover.simulate">
+<code class="descname">simulate</code><span class="sig-paren">(</span><em>pose</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/movers.html#AMBERSimulateMover.simulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.simulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimize, then simulate the given Pose using pmemd.cuda. Return a
+Trajectory object of the frames output during the simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pose</strong> (<em>rosetta.core.Pose</em>) – Pose to minimize and simulate.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The frames from the simulation.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">pytraj.Trajectory</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.starting_temperature">
+<code class="descname">starting_temperature</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.starting_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starting temperature of simulation in kelvins. 0 by
+default.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int or float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.movers.AMBERSimulateMover.temperature">
+<code class="descname">temperature</code><a class="headerlink" href="#ambrose.movers.AMBERSimulateMover.temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temperature of simulation in kelvins.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int or float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.pose_selectors">
+<span id="ambrose-pose-selectors-module"></span><h2>ambrose.pose_selectors module<a class="headerlink" href="#module-ambrose.pose_selectors" title="Permalink to this headline">¶</a></h2>
+<p>Functions for selecting Poses from (indexable) sequences of Poses, to be used
+for the <code class="docutils literal notranslate"><span class="pre">pose_selector</span></code> attribute of <a href="#id1"><span class="problematic" id="id2">`</span></a>AMBERMover`_s that have one.</p>
+<dl class="function">
+<dt id="ambrose.pose_selectors.last">
+<code class="descclassname">ambrose.pose_selectors.</code><code class="descname">last</code><span class="sig-paren">(</span><em>l</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_selectors.html#last"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_selectors.last" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the last Pose in a sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>l</strong> (<em>list</em><em> or </em><a class="reference internal" href="#ambrose.traj_to_poses.TrajToPoses" title="ambrose.traj_to_poses.TrajToPoses"><em>TrajToPoses</em></a>) – A sequence (indexable object) containing Poses that you want to select a
+Pose from.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The selected Pose from the given list.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">rosetta.core.Pose</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_selectors.lowest_energy_from_end">
+<code class="descclassname">ambrose.pose_selectors.</code><code class="descname">lowest_energy_from_end</code><span class="sig-paren">(</span><em>l</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_selectors.html#lowest_energy_from_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_selectors.lowest_energy_from_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the lowest energy Pose in roughly the rightmost half of a
+sequence. The region that the Pose is selected from will contain at minimum
+the rightmost 1/e of the list, and is extended leftwards until a Pose is
+reached that is more than 2 standard deviations from the average of the
+rightmost 1/e (this Pose is excluded).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>l</strong> (<em>list</em><em> or </em><a class="reference internal" href="#ambrose.traj_to_poses.TrajToPoses" title="ambrose.traj_to_poses.TrajToPoses"><em>TrajToPoses</em></a>) – A sequence (indexable object) containing Poses that you want to select a
+Pose from.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The selected Pose from the given list.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">rosetta.core.Pose</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.pose_to_traj">
+<span id="ambrose-pose-to-traj-module"></span><h2>ambrose.pose_to_traj module<a class="headerlink" href="#module-ambrose.pose_to_traj" title="Permalink to this headline">¶</a></h2>
+<p>Functions involved in the creation of AMBER simulations based on poses.
+Notably, many functions, such as <a href="#id43"><span class="problematic" id="id44">`run_md`_</span></a>, deal with pure AMBER. <a href="#id45"><span class="problematic" id="id46">`run_md`_</span></a> in
+particular is, however, the only way to actually run minimizations and
+simulations, so it belongs in this family.</p>
+<dl class="function">
+<dt id="ambrose.pose_to_traj.amber_bin">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">amber_bin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#amber_bin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.amber_bin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the folder where AMBRose looks for AMBER binaries.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.dict_to_namelist_file">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">dict_to_namelist_file</code><span class="sig-paren">(</span><em>d</em>, <em>path</em>, <em>name='cntrl'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#dict_to_namelist_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.dict_to_namelist_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a single-group FORTRAN 77 NAMELIST file for a given dict of
+key-value pairs <code class="docutils literal notranslate"><span class="pre">d</span></code> and a given group name <code class="docutils literal notranslate"><span class="pre">name</span></code>. The file is saved at
+<code class="docutils literal notranslate"><span class="pre">path</span></code>. Depends on the function <cite>dict_to_namelist_str()</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>d</strong> (<em>dict</em>) – The dict containing the record names and values for the NAMELIST
+records. Keys should be strings containing valid record names
+(satisfying the regular expression /[A-Za-z][<a href="#id47"><span class="problematic" id="id48">A-Za-z0-9_</span></a>]{0,30}/), while
+values should be anything that can be cast to a FORTRAN 77 data type that
+isn’t an array (ints, floats, strings, booleans).</li>
+<li><strong>path</strong> (<em>str</em>) – The path at which the output file is to be saved.</li>
+<li><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the group to be output. Must be a valid group name
+(satisfying the regular expression /[A-Za-z][<a href="#id49"><span class="problematic" id="id50">A-Za-z0-9_</span></a>]{0,30}/).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.dict_to_namelist_str">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">dict_to_namelist_str</code><span class="sig-paren">(</span><em>d</em>, <em>name='cntrl'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#dict_to_namelist_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.dict_to_namelist_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dumps a single-group FORTRAN 77 NAMELIST for a dict, as a string. The
+string has a trailing newline, to aid concatenation of groups, and to
+make it easier to save as a file. It doesn’t do arrays.</p>
+<p>Note that if you just dump the string directly to a file, then it can’t
+be used as an mdin NAMELIST file for sander, because sander treats the
+first line as a title, while here the first line is already the group
+name. You need to concatenate a newline to the front of the string, if
+you are going to dump it to a file. The same applies to pmemd.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d</strong> (<em>dict</em>) – The dict containing the record names and values for the NAMELIST
+records. Keys should be strings containing valid record names
+(satisfying the regular expression /[A-Za-z][<a href="#id51"><span class="problematic" id="id52">A-Za-z0-9_</span></a>]{0,30}/), while
+values should be anything that can be cast to a FORTRAN 77 data type that
+isn’t an array (ints, floats, strings, booleans).</li>
+<li><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the group to be output. Must be a valid group name
+(satisfying the regular expression /[A-Za-z][<a href="#id53"><span class="problematic" id="id54">A-Za-z0-9_</span></a>]{0,30}/).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A string of your created NAMELIST group. Has a trailing, but not a
+leading newline.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.dump_amber_pdb">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">dump_amber_pdb</code><span class="sig-paren">(</span><em>pose</em>, <em>pdb_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#dump_amber_pdb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.dump_amber_pdb" title="Permalink to this definition">¶</a></dt>
+<dd><p>From a Pose, dump a PDB suitable for input into AMBER. Currently just
+dumps it normally, but without hydrogens.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pose</strong> (<em>rosetta.core.Pose</em>) – The pose to dump.</li>
+<li><strong>pdb_path</strong> (<em>str</em>) – The path at which to dump it.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.fortran_str">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">fortran_str</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#fortran_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.fortran_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts ints, floats, bools, and strings into strings of analogous
+FORTRAN 77 literals. Strings must naturally only consist of ASCII, and as a
+further constraint must also only contain printable characters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.pose_to_amber_params">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">pose_to_amber_params</code><span class="sig-paren">(</span><em>pose</em>, <em>crd_path</em>, <em>top_path</em>, <em>log_path='leap.log'</em>, <em>*</em>, <em>leap_script_dump_path=None</em>, <em>solvent=None</em>, <em>solvent_shape=&lt;SolventShape.OCT: 'OCT'&gt;</em>, <em>add_ions=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#pose_to_amber_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.pose_to_amber_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a .rst7 input coordinates file and a .parm7 topology file for
+input into sander or pmemd, based on a Rosetta Pose, by invoking LEaP.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pose</strong> (<em>rosetta.core.Pose</em>) – The input pose.</li>
+<li><strong>crd_path</strong> (<em>str</em>) – Path to the output .rst7 file.</li>
+<li><strong>top_path</strong> (<em>str</em>) – Path to the output .parm7 file.</li>
+<li><strong>log_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the output LEaP log file. Default is <code class="docutils literal notranslate"><span class="pre">leap.log</span></code> in the current
+directory. Due to a how LEaP’s header scripts for proteins function,
+this command actually barely does anything at all, at the moment; most
+of the log will still be dumped in the current working directory under
+the filename <code class="docutils literal notranslate"><span class="pre">leap.log</span></code>, regardless of your settings.</li>
+<li><strong>leap_script_dump_path</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Path to dump the generated LEaP script at. Default is None.</li>
+<li><strong>solvent</strong> (<a class="reference internal" href="#ambrose.enums.Solvent" title="ambrose.enums.Solvent"><em>Solvent</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – What explicit solvent to use, if any. See the <a href="#id55"><span class="problematic" id="id56">`Solvent`_</span></a> class for your
+options. None by default.</li>
+<li><strong>solvent_shape</strong> (<a class="reference internal" href="#ambrose.enums.SolventShape" title="ambrose.enums.SolventShape"><em>SolventShape</em></a><em>, </em><em>optional</em>) – What shape to use for the explicit solvent box, if any. See the
+<a href="#id57"><span class="problematic" id="id58">`SolventShape`_</span></a> class for your options. <code class="docutils literal notranslate"><span class="pre">OCT</span></code> by default.</li>
+<li><strong>add_ions</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to add neutralizing sodium or chloride ions in the case that
+your simulation is explicit-solvent and the charge of your protein is
+nonzero. True by default.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.pose_to_traj.run_md">
+<code class="descclassname">ambrose.pose_to_traj.</code><code class="descname">run_md</code><span class="sig-paren">(</span><em>executable='pmemd.cuda'</em>, <em>*</em>, <em>overwrite=False</em>, <em>mdin=None</em>, <em>mdin_dict=None</em>, <em>mdout=None</em>, <em>prmtop=None</em>, <em>inpcrd=None</em>, <em>restrt=None</em>, <em>refc=None</em>, <em>mdcrd=None</em>, <em>mdinfo=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/pose_to_traj.html#run_md"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.pose_to_traj.run_md" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs an AMBER MD program (pmemd.cuda by default) with the given arguments
+with the additional feature that the mdin file, which normally gives the
+simulation parameters, can be replaced with a dict specifying the same
+parameters. All arguments are optional, as in the sander executable; if a
+value is needed but not specified, sander will assume the default (which is
+the argument’s name in this case).</p>
+<p>If you don’t want to make the mdin_dict parameters by hand, the <a href="#id59"><span class="problematic" id="id60">templates_</span></a>
+submodule can synthesize some common formulas for you.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>executable</strong> (<em>str</em><em>, </em><em>optional</em>) – The AMBER executable to run the MD with. pmemd.cuda by default.</li>
+<li><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to overwrite the output files if already present. Equivalent to
+the <code class="docutils literal notranslate"><span class="pre">-O</span></code> flag in the executable.</li>
+<li><strong>mdin</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the FORTRAN NAMELIST file that contains the simulation
+parameters. Overridden if parameter mdin_dict is not None. Equivalent to
+the <code class="docutils literal notranslate"><span class="pre">-i</span></code> flag in the executable.</li>
+<li><strong>mdin_dict</strong> (<em>dict</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – A dict encoding the FORTRAN NAMELIST file that would contain the
+simulation parameters. The group name is always <code class="docutils literal notranslate"><span class="pre">cntrl</span></code> (hence Ewald
+is currently not supported). The keys and values represent data fields
+and their values respectively. If both this and <code class="docutils literal notranslate"><span class="pre">mdin</span></code> is set, then
+the corresponding <code class="docutils literal notranslate"><span class="pre">mdin</span></code> file generated from the <code class="docutils literal notranslate"><span class="pre">mdin_dict</span></code> will be
+stored at the path given for <code class="docutils literal notranslate"><span class="pre">mdin</span></code>.
+See the <cite>templates</cite> submodule for functions that automatically
+produce <a href="#id3"><span class="problematic" id="id4">``</span></a>mdin_dict``s for different situations.</li>
+<li><strong>mdout</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the log file where each <code class="docutils literal notranslate"><span class="pre">mdinfo</span></code> is recorded. Equivalent
+to the <code class="docutils literal notranslate"><span class="pre">-o</span></code> flag in the executable.</li>
+<li><strong>prmtop</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the topology file of the structures involved in the
+simulation. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-p</span></code> flag in the executable.</li>
+<li><strong>inpcrd</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the file containing the initial coordinates for the
+simulation. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-c</span></code> flag in the executable.</li>
+<li><strong>restrt</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the file containing the most recently computed coordinates
+and velocities for the simulation. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-r</span></code> flag in the
+executable.</li>
+<li><strong>refc</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the file containing the reference coordinates for coordinate
+constraints, if any. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-ref</span></code> flag in the executable.</li>
+<li><strong>mdcrd</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the file where the coordinates are output during the
+simulation. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-x</span></code> flag in the executable.</li>
+<li><strong>mdinfo</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the file where some high-level data about how the simulation
+is going is saved every so often. Equivalent to the <code class="docutils literal notranslate"><span class="pre">-inf</span></code> flag in the
+executable.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Return value of the AMBER executable run.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.templates">
+<span id="ambrose-templates-module"></span><h2>ambrose.templates module<a class="headerlink" href="#module-ambrose.templates" title="Permalink to this headline">¶</a></h2>
+<p>Functions that produce template <a href="#id5"><span class="problematic" id="id6">``</span></a>mdin_dict``s for various common use cases,
+with a nicer API than AMBER’s default. To be used with either of the top-level
+functions <a href="#id61"><span class="problematic" id="id62">run_md_</span></a> or <a href="#id63"><span class="problematic" id="id64">`dict_to_namelist_file`_</span></a>, if you are looking to directly
+run a simulation or to just create a NAMELIST file, respectively.</p>
+<dl class="function">
+<dt id="ambrose.templates.minimize_dry">
+<code class="descclassname">ambrose.templates.</code><code class="descname">minimize_dry</code><span class="sig-paren">(</span><em>*</em>, <em>cutoff=15.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/templates.html#minimize_dry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.templates.minimize_dry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template of dict of mdin parameters for an implicit solvent minimization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Van der Waals cutoff in angstroms.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.templates.minimize_wet">
+<code class="descclassname">ambrose.templates.</code><code class="descname">minimize_wet</code><span class="sig-paren">(</span><em>*</em>, <em>cutoff=15.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/templates.html#minimize_wet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.templates.minimize_wet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template of dict of mdin parameters for an explicit solvent minimization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Van der Waals cutoff in angstroms.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.templates.simulate_dry">
+<code class="descclassname">ambrose.templates.</code><code class="descname">simulate_dry</code><span class="sig-paren">(</span><em>*</em>, <em>duration=None</em>, <em>temperature=None</em>, <em>starting_temperature=0</em>, <em>cutoff=15.0</em>, <em>output_interval=1.0</em>, <em>seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/templates.html#simulate_dry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.templates.simulate_dry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template of dict of mdin parameters for an implicit solvent simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>duration</strong> (<em>int</em><em> or </em><em>float</em>) – Duration of simulation in picoseconds.</li>
+<li><strong>temperature</strong> (<em>int</em><em> or </em><em>float</em>) – Temperature of simulation in kelvins.</li>
+<li><strong>starting_temperature</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Starting temperature of simulation in kelvins. 0 by default.</li>
+<li><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Van der Waals cutoff in angstroms. 15 by default.</li>
+<li><strong>output_interval</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Amount of time to wait in between writing frames and log data, in
+picoseconds. 1 by default.</li>
+<li><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed to use for random operations (e.g. Langevin thermostat).
+Nonnegative integers are valid seeds, while negative integers cause
+the seed to be determined by the hardware.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.templates.simulate_wet">
+<code class="descclassname">ambrose.templates.</code><code class="descname">simulate_wet</code><span class="sig-paren">(</span><em>*</em>, <em>duration=None</em>, <em>temperature=None</em>, <em>starting_temperature=0</em>, <em>cutoff=15.0</em>, <em>output_interval=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/templates.html#simulate_wet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.templates.simulate_wet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template of dict of mdin parameters for an explicit solvent simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>duration</strong> (<em>int</em><em> or </em><em>float</em>) – Duration of simulation in picoseconds.</li>
+<li><strong>temperature</strong> (<em>int</em><em> or </em><em>float</em>) – Temperature of simulation in kelvins. 0 by default.</li>
+<li><strong>starting_temperature</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Starting temperature of simulation in kelvins.</li>
+<li><strong>cutoff</strong> (<em>int</em><em> or </em><em>float</em>) – Van der Waals cutoff in angstroms.</li>
+<li><strong>output_interval</strong> (<em>int</em><em> or </em><em>float</em>) – Amount of time to wait in between writing frames and log data, in
+picoseconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.traj_to_poses">
+<span id="ambrose-traj-to-poses-module"></span><h2>ambrose.traj_to_poses module<a class="headerlink" href="#module-ambrose.traj_to_poses" title="Permalink to this headline">¶</a></h2>
+<p>The <a href="#id65"><span class="problematic" id="id66">`TrajToPoses`_</span></a> class and its supporting functions.</p>
+<dl class="class">
+<dt id="ambrose.traj_to_poses.TrajToPoses">
+<em class="property">class </em><code class="descclassname">ambrose.traj_to_poses.</code><code class="descname">TrajToPoses</code><span class="sig-paren">(</span><em>traj</em>, <em>options=None</em>, <em>*</em>, <em>_TrajToPoses__residues=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/traj_to_poses.html#TrajToPoses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.traj_to_poses.TrajToPoses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A container that provides a <code class="docutils literal notranslate"><span class="pre">Pose</span></code> for each frame of a given pytraj
+<code class="docutils literal notranslate"><span class="pre">Trajectory</span></code>. The Poses are created dynamically when you ask for them, so
+this object is not very memory-intensive. The trade-off, however, is that
+getting a <code class="docutils literal notranslate"><span class="pre">Pose</span></code> from it is fairly expensive, so try not to do it more
+times than you need to. (One could imagine a version of this object that
+stores weak references to all the <code class="docutils literal notranslate"><span class="pre">Pose``s</span> <span class="pre">it</span> <span class="pre">emits,</span> <span class="pre">so</span> <span class="pre">that</span> <span class="pre">it</span> <span class="pre">returns</span> <span class="pre">the</span>
+<span class="pre">same</span> <span class="pre">``Pose</span></code> object every time for a given index unless it stops being used
+elsewhere. But then you’d have to make a new <a href="#id67"><span class="problematic" id="id68">TrajToPoses_</span></a> object
+every time you wanted the original <code class="docutils literal notranslate"><span class="pre">Pose</span></code> corresponding to that index,
+which is unidiomatic.)</p>
+<p class="rubric">Example</p>
+<p>This is how one would obtain a <code class="docutils literal notranslate"><span class="pre">Pose</span></code> for the first frame of a
+<code class="docutils literal notranslate"><span class="pre">Trajectory</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyrosetta</span> <span class="k">as</span> <span class="nn">pr</span><span class="p">;</span> <span class="n">pr</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="kn">import</span> <span class="nn">pytraj</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="kn">from</span> <span class="nn">miniambrose</span> <span class="k">import</span> <span class="n">TrajToPose</span>
+
+<span class="n">traj</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">iterload</span><span class="p">(</span><span class="s1">&#39;my-traj.mdcrd&#39;</span><span class="p">,</span> <span class="s1">&#39;my-top.prmtop&#39;</span><span class="p">)</span>
+<span class="n">poses</span> <span class="o">=</span> <span class="n">TrajToPose</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+<span class="n">pose</span> <span class="o">=</span> <span class="n">poses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>traj</strong> (<em>pytraj.Trajectory</em>) – The trajectory the Poses are derived from.</li>
+<li><strong>options</strong> (<em>rosetta.core.import_pose.ImportPoseOptions</em><em>, </em><em>optional</em>) – The options used to derive the Poses.</li>
+<li><strong>__residues</strong> (<em>tuple</em><em>(</em><em>_ResidueMap</em><em>)</em><em>, </em><em>optional</em>) – A tuple of <a href="#id7"><span class="problematic" id="id8">`</span></a>_RosettaResidue`_s to use as its internal map of Rosetta
+residues to pytraj residues. Used whenever slices of this object are
+made.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="ambrose.traj_to_poses.TrajToPoses.traj">
+<code class="descname">traj</code><a class="headerlink" href="#ambrose.traj_to_poses.TrajToPoses.traj" title="Permalink to this definition">¶</a></dt>
+<dd><p>The trajectory the Poses are derived from.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">pytraj.Trajectory</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.traj_to_poses.TrajToPoses.options">
+<code class="descname">options</code><a class="headerlink" href="#ambrose.traj_to_poses.TrajToPoses.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>The options used to derive the Poses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">rosetta.core.import_pose.ImportPoseOptions</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ambrose.traj_to_poses.TrajToPoses.__residues">
+<code class="descname">__residues</code><a class="headerlink" href="#ambrose.traj_to_poses.TrajToPoses.__residues" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tuple of <a href="#id9"><span class="problematic" id="id10">`</span></a>_RosettaResidue`_s to use as its internal map of Rosetta
+residues to pytraj residues.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">tuple(_ResidueMap)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.traj_to_poses.pose_from_amber_params">
+<code class="descclassname">ambrose.traj_to_poses.</code><code class="descname">pose_from_amber_params</code><span class="sig-paren">(</span><em>crd_path</em>, <em>top_path</em>, <em>index=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/traj_to_poses.html#pose_from_amber_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.traj_to_poses.pose_from_amber_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an AMBER coordinates and topology file and creates a pose from them
+with <a href="#id69"><span class="problematic" id="id70">`TrajToPoses`_</span></a>. If the coordinates contain multiple frames, it takes
+either the first one, or the one specified by the argument <code class="docutils literal notranslate"><span class="pre">index</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>crd_path</strong> (<em>str</em>) – Path to the input .rst7 or .nc file.</li>
+<li><strong>top_path</strong> (<em>str</em>) – Path to the input .parm7 file.</li>
+<li><strong>index</strong> (<em>int</em><em>, </em><em>optional</em>) – The index of the frame to use from the trajectory. 0 by default.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The pose corresponding to the given input files.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">rosetta.core.Pose</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.utils">
+<span id="ambrose-utils-module"></span><h2>ambrose.utils module<a class="headerlink" href="#module-ambrose.utils" title="Permalink to this headline">¶</a></h2>
+<p>Utility functions applicable to any submodule of AMBRose.</p>
+<dl class="function">
+<dt id="ambrose.utils.debug_print">
+<code class="descclassname">ambrose.utils.</code><code class="descname">debug_print</code><span class="sig-paren">(</span><em>value</em>, <em>*more_values</em>, <em>sep=' '</em>, <em>end='\n'</em>, <em>file=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='UTF-8'&gt;</em>, <em>flush=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/utils.html#debug_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.utils.debug_print" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-ambrose.validation">
+<span id="ambrose-validation-module"></span><h2>ambrose.validation module<a class="headerlink" href="#module-ambrose.validation" title="Permalink to this headline">¶</a></h2>
+<p>Functions for validating objects and files produced by AMBRose.</p>
+<dl class="function">
+<dt id="ambrose.validation.check_file_existence">
+<code class="descclassname">ambrose.validation.</code><code class="descname">check_file_existence</code><span class="sig-paren">(</span><em>path</em>, <em>file_type='AMBER file'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/validation.html#check_file_existence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.validation.check_file_existence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether a file exists. If it doesn’t exist, this raises an
+<a href="#id71"><span class="problematic" id="id72">`AMBERFileError`_</span></a> with the path of the file and a description of it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<em>str</em>) – Path to file to check existence of.</li>
+<li><strong>file_type</strong> (<em>str</em>) – Noun phrase describing file, to be inserted into error message.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ambrose.validation.check_pose_convertibility">
+<code class="descclassname">ambrose.validation.</code><code class="descname">check_pose_convertibility</code><span class="sig-paren">(</span><em>pose</em>, <em>crd_path</em>, <em>top_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ambrose/validation.html#check_pose_convertibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ambrose.validation.check_pose_convertibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether a Pose changes its topology upon being converted to AMBER
+coordinates and back, given the pose and the paths to the coordinates and
+topology files it’s been converted to.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pose</strong> (<em>rosetta.core.Pose</em>) – Pose to check.</li>
+<li><strong>crd_path</strong> (<em>str</em>) – Path to coordinates file Pose has been converted to.</li>
+<li><strong>top_path</strong> (<em>str</em>) – Path to topology file Pose has been converted to.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ambrose">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-ambrose" title="Permalink to this headline">¶</a></h2>
+<p>AMBER intercompatibility for PyRosetta. Main features are conversion of
+Rosetta Poses to input files for simulation, conversion of simulation frames to
+Rosetta Poses, and abstraction of the entire Rosetta-to-simulation-to-Rosetta
+workflow into Mover-like objects.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

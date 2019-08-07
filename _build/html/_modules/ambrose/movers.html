@@ -1,0 +1,977 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ambrose.movers &mdash; AMBRose 2.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> AMBRose
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AMBRose</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ambrose.movers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ambrose.movers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;The _AMBERMovers and their supporting functions and classes. These fake</span>
+<span class="sd">movers all convert a Pose to AMBER params, do something with them in AMBER</span>
+<span class="sd">(either a minimization or simulation, so far), and replace the Pose with</span>
+<span class="sd">the result in some way.&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1"># pragma pylint: disable=import-error</span>
+<span class="kn">import</span> <span class="nn">pytraj</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="c1"># pragma pylint: enable=import-error</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">enums</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">validation</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">traj_to_poses</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">pose_to_traj</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">pose_selectors</span>
+
+<span class="c1">### Supporting functions</span>
+
+<span class="k">def</span> <span class="nf">_timestamp</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Gets timestamp in standardized format.&#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">_transfer_xyz_from_pose_to_pose</span><span class="p">(</span><span class="n">source_pose</span><span class="p">,</span> <span class="n">dest_pose</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Copy coordinates from one pose to another, assuming that they have the</span>
+<span class="sd">    exact same topology (we don&#39;t bother to check).&#39;&#39;&#39;</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dest_pose</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">dest_r</span> <span class="o">=</span> <span class="n">dest_pose</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">source_r</span> <span class="o">=</span> <span class="n">source_pose</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="c1"># pylint: disable=no-member</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dest_r</span><span class="o">.</span><span class="n">natoms</span><span class="p">()):</span>
+            <span class="n">dest_r</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">source_r</span><span class="o">.</span><span class="n">xyz</span><span class="p">(</span><span class="n">j</span><span class="p">))</span>
+
+<span class="c1">### Classes</span>
+
+<span class="k">class</span> <span class="nc">_NotAMover</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Mimics the Mover class from Rosetta. Nearly every method raises a</span>
+<span class="sd">    NotImplementedError; it is therefore more of an interface than a class.</span>
+<span class="sd">    All getters and setters are implemented as Python properties, with &quot;get&quot;</span>
+<span class="sd">    and &quot;set&quot; removed from their names, if applicable. The methods that don&#39;t</span>
+<span class="sd">    raise NotImplementedError have docstrings.&#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Name of Mover.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;UNDEFINED NAME&#39;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">self_ptr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Pointer to Mover.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">self_weak_ptr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Weak pointer to Mover.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">register_options</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">test_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Copy of `apply`_, with possibility of overriding for testing.&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pose</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@type</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@input_pose</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">input_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">native_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="nd">@native_pose</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">native_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Returns copy of Mover.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">parse_my_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">movers</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ostream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Prints a representation of the Mover.&#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">ostream</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">_AMBERMover</span><span class="p">(</span><span class="n">_NotAMover</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Not a real mover; rather, a superclass for all &quot;movers&quot; using AMBER.</span>
+<span class="sd">    The apply_ method actually does something: it minimizes the pose for</span>
+<span class="sd">    500 steps in AMBER. This doesn&#39;t change the final state of the pose, but</span>
+<span class="sd">    it doesn&#39;t delete the files, either. This is meant to serve as the first</span>
+<span class="sd">    step of any AMBER operation, and is ideally called as a super before the</span>
+<span class="sd">    subclass&#39;s apply. See its docstring for details on the kinds of files it</span>
+<span class="sd">    creates.&#39;&#39;&#39;</span>
+
+    <span class="n">LEAP_SUFFIXES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;crd_path&#39;</span> <span class="p">:</span> <span class="s1">&#39;-inpcrd.rst7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;top_path&#39;</span> <span class="p">:</span> <span class="s1">&#39;-prmtop.parm7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;log_path&#39;</span> <span class="p">:</span> <span class="s1">&#39;-leap.log&#39;</span>
+    <span class="p">}</span>
+    <span class="n">MIN_SUFFIXES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;prmtop&#39;</span> <span class="p">:</span> <span class="s1">&#39;-prmtop.parm7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;inpcrd&#39;</span> <span class="p">:</span> <span class="s1">&#39;-inpcrd.rst7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;restrt&#39;</span> <span class="p">:</span> <span class="s1">&#39;-min-restrt.nc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdinfo&#39;</span> <span class="p">:</span> <span class="s1">&#39;-min-mdinfo&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdin&#39;</span>   <span class="p">:</span> <span class="s1">&#39;-min-mdin.in&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdout&#39;</span>  <span class="p">:</span> <span class="s1">&#39;-min-mdout.out&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;refc&#39;</span>   <span class="p">:</span> <span class="s1">&#39;-refc.rst7&#39;</span>
+    <span class="p">}</span>
+    <span class="n">MD_SUFFIXES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;prmtop&#39;</span> <span class="p">:</span> <span class="s1">&#39;-prmtop.parm7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;inpcrd&#39;</span> <span class="p">:</span> <span class="s1">&#39;-min-restrt.nc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;restrt&#39;</span> <span class="p">:</span> <span class="s1">&#39;-restrt.nc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdcrd&#39;</span>  <span class="p">:</span> <span class="s1">&#39;-mdcrd.nc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdinfo&#39;</span> <span class="p">:</span> <span class="s1">&#39;-mdinfo&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdin&#39;</span>   <span class="p">:</span> <span class="s1">&#39;-mdin.in&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mdout&#39;</span>  <span class="p">:</span> <span class="s1">&#39;-mdout.out&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;refc&#39;</span>   <span class="p">:</span> <span class="s1">&#39;-refc.rst7&#39;</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_dir</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">solvent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">solvent_shape</span><span class="o">=</span><span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">OCT</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">,</span>
+                 <span class="n">ref_pose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cst_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cst_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_working_dir</span> <span class="o">=</span> <span class="n">working_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref_pose</span> <span class="o">=</span> <span class="n">ref_pose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solvent</span> <span class="o">=</span> <span class="n">solvent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solvent_shape</span> <span class="o">=</span> <span class="n">solvent_shape</span>
+        <span class="n">wet</span> <span class="o">=</span> <span class="n">solvent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_amber_executable</span> <span class="o">=</span> <span class="s1">&#39;pmemd.cuda&#39;</span>
+        <span class="n">common_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;igb&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">wet</span><span class="p">)</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span>
+                       <span class="s1">&#39;ntb&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">wet</span><span class="p">),</span>
+                       <span class="s1">&#39;cut&#39;</span><span class="p">:</span> <span class="n">cutoff</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">ref_pose</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">common_dict</span><span class="p">[</span><span class="s1">&#39;ntr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">cst_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">common_dict</span><span class="p">[</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cst_mask</span>
+        <span class="k">if</span> <span class="n">cst_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">common_dict</span><span class="p">[</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cst_weight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;imin&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">common_dict</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">common_dict</span><span class="p">}</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;UNDEFINED _AMBERMover&#39;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">working_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;str or None: Working directory in which intermediate files are</span>
+<span class="sd">        stored. If set to None, will use a temporary directory that gets deleted</span>
+<span class="sd">        once the AMBER operation is finished (not recommended). Current directory</span>
+<span class="sd">        by default.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_working_dir</span>
+    <span class="nd">@working_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">working_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_working_dir</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;str or None: The prefix of the intermediate files output by the</span>
+<span class="sd">        simulation. If set to None, will use the timestamp at which `apply`_</span>
+<span class="sd">        was called.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span>
+    <span class="nd">@prefix</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">solvent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Solvent or None: The type of solvent to use for an explicit-solvent</span>
+<span class="sd">        simulation, if any. If this is set to None, an implicit-solvent</span>
+<span class="sd">        simulation will be performed instead. None by default.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solvent</span>
+    <span class="nd">@solvent</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">solvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solvent</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">wet</span> <span class="o">=</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;igb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">wet</span><span class="p">)</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">wet</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;igb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="ow">not</span> <span class="n">wet</span><span class="p">)</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">wet</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">solvent_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;SolventShape: The shape of solvent to use for an explicit-solvent</span>
+<span class="sd">        simulation. ``OCT`` by default.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solvent_shape</span>
+    <span class="nd">@solvent_shape</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">solvent_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solvent_shape</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float: Van der Waals cutoff in angstroms. Ignored for</span>
+<span class="sd">        implicit-solvent simulations, since pmemd.cuda doesn&#39;t allow a cutoff</span>
+<span class="sd">        for those. 15 by default.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;cut&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;cut&#39;</span><span class="p">]:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Van der Waals cutoff values don</span><span class="se">\&#39;</span><span class="s1">t match for &#39;</span>
+                          <span class="s1">&#39;minimization and simulation. To fix this, assign &#39;</span>
+                          <span class="s1">&#39;something to cutoff. Returning simulation cutoff &#39;</span>
+                          <span class="s1">&#39;value.&#39;</span><span class="p">,</span>
+                          <span class="ne">RuntimeWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;cut&#39;</span><span class="p">]</span>
+    <span class="nd">@cutoff</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ref_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Pose or None: Reference Pose to give coordinate constraints, if any.</span>
+<span class="sd">        It is safe to use the Pose that you are operating on for this purpose,</span>
+<span class="sd">        if you want to constrain the Pose to its original coordinates; you just</span>
+<span class="sd">        won&#39;t be able to use it again after an `apply`_, since the Pose will</span>
+<span class="sd">        change.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref_pose</span>
+    <span class="nd">@ref_pose</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ref_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref_pose</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;ntr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntr&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;ntr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntr&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cst_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;str or None: Atom mask string specifying which atoms are affected by</span>
+<span class="sd">        the coordinate constraints. Given in ambmask syntax: see section 19.1 of</span>
+<span class="sd">        the 2019 AMBER manual, on page 410.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">)</span>
+    <span class="nd">@cst_mask</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">cst_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;restraintmask&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;restraintmask&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraintmask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cst_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float or None: Weight of coordinate constraints, in</span>
+<span class="sd">        kcal/mol/angstroms^2.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">)</span>
+    <span class="nd">@cst_weight</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">cst_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;restraint_wt&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;restraint_wt&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;restraint_wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">min_mdin_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;dict: Key-value pairs for AMBER minimization parameters. Only tamper</span>
+<span class="sd">        with these if you&#39;ve ever made a NAMELIST file for an AMBER simulation</span>
+<span class="sd">        (because that&#39;s what this describes). For all available parameters, see</span>
+<span class="sd">        section 17.6 of the 2018 AMBER manual, on page 320.&#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span>
+    <span class="nd">@min_mdin_dict</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">min_mdin_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s1">&#39;min_mdin_dict must be a dict.&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mdin_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;dict: Key-value pairs for AMBER simulation parameters. Only tamper</span>
+<span class="sd">        with these if you&#39;ve ever made a NAMELIST file for an AMBER simulation</span>
+<span class="sd">        (because that&#39;s what this describes). For all available parameters, see</span>
+<span class="sd">        section 17.6 of the 2018 AMBER manual, on page 320.&#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span>
+    <span class="nd">@mdin_dict</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mdin_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s1">&#39;mdin_dict must be a dict.&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">_make_run_md_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">minp</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a dict of keyword arguments that can be passed to `run_md`_</span>
+<span class="sd">        for a particular run, based on some local variables calculated during</span>
+<span class="sd">        an `apply`_ call. Intended for internal use during said calls.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        working_dir : str or TemporaryDirectory</span>
+<span class="sd">            Object representing current working directory and behaving like a</span>
+<span class="sd">            string.</span>
+<span class="sd">        prefix : str</span>
+<span class="sd">            Prefix used for this run.</span>
+<span class="sd">        minp : bool</span>
+<span class="sd">            Whether to produce args for a minimization (True) or a simulation</span>
+<span class="sd">            (False).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dict of arguments that can be unpacked into a `run_md`_ call during</span>
+<span class="sd">            an `apply`_ call when all the necessary files already exist.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">suffix_dict</span> <span class="o">=</span> <span class="n">_AMBERMover</span><span class="o">.</span><span class="n">MIN_SUFFIXES</span> <span class="k">if</span> <span class="n">minp</span> \
+                      <span class="k">else</span> <span class="n">_AMBERMover</span><span class="o">.</span><span class="n">MD_SUFFIXES</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="o">+</span><span class="n">suffix</span><span class="p">)</span> \
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="n">suffix_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;executable&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amber_executable</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_pose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;refc&#39;</span><span class="p">]</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;mdin_dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_mdin_dict</span> <span class="k">if</span> <span class="n">minp</span> \
+                                      <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">)</span>
+        <span class="c1"># Necessary so that pmemd.cuda doesn&#39;t barf. Why don&#39;t we just leave</span>
+        <span class="c1"># out the cutoff altogether? Because, apparently, the default of 0 is</span>
+        <span class="c1"># not good enough, because it&#39;s less than 999 angstroms. You&#39;d think</span>
+        <span class="c1"># that this means that the cutoff must be large but finite, but no,</span>
+        <span class="c1"># anything above 999 angstroms gets treated as infinite anyway. Aaaargh.</span>
+        <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;mdin_dict&#39;</span><span class="p">][</span><span class="s1">&#39;igb&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s1">&#39;mdin_dict&#39;</span><span class="p">][</span><span class="s1">&#39;cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1000.</span>
+        <span class="k">return</span> <span class="n">args</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;This half of apply will create a topology file for the pose, and</span>
+<span class="sd">        minimize it in AMBER, which is the bare minimum for what you need to do</span>
+<span class="sd">        before running a simulation. The topology file will be stored at</span>
+<span class="sd">        ``[working_dir]/[prefix]-prmtop.parm7``, and the restart file for the</span>
+<span class="sd">        minimized structure will be stored at</span>
+<span class="sd">        ``[working_dir]/[prefix]-min-restrt.nc``. The local variables</span>
+<span class="sd">        ``working_dir``, ``prefix``, and ``min_paths`` will be returned in a</span>
+<span class="sd">        tuple, to be used for the second half, to be written in the subclass.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pose : rosetta.core.Pose</span>
+<span class="sd">            Pose to minimize.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        (str or TemporaryDirectory, str, dict)</span>
+<span class="sd">            A tuple containing the local variables ``working_dir``,</span>
+<span class="sd">            ``prefix``, and ``min_args``. ``working_dir`` is a string or</span>
+<span class="sd">            TemporaryDirectory object representing the directory where the</span>
+<span class="sd">            intermediate files are stored, which must be kept alive under most</span>
+<span class="sd">            circumstances to prevent the directory from being deleted in the</span>
+<span class="sd">            case that it&#39;s temporary. ``prefix`` is the string prefix for files</span>
+<span class="sd">            created during this run; if the preperty `prefix`_ is set, it will</span>
+<span class="sd">            be equal to it. ``min_args`` is a dict representing the arguments</span>
+<span class="sd">            that were passed to `run_md`_ during the minimization that occurred</span>
+<span class="sd">            when this `apply`_ was called.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">,</span> \
+                   <span class="s1">&#39;Working directory must exist.&#39;</span>
+        <span class="n">working_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                      <span class="k">else</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">_timestamp</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span>
+        <span class="n">leap_args</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="o">+</span><span class="n">suffix</span><span class="p">)</span> \
+                     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="n">_AMBERMover</span><span class="o">.</span><span class="n">LEAP_SUFFIXES</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;solvent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span>
+        <span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;solvent_shape&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent_shape</span>
+        <span class="n">pose_to_traj</span><span class="o">.</span><span class="n">pose_to_amber_params</span><span class="p">(</span><span class="n">pose</span><span class="p">,</span> <span class="o">**</span><span class="n">leap_args</span><span class="p">)</span>
+        <span class="n">validation</span><span class="o">.</span><span class="n">check_file_existence</span><span class="p">(</span><span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;crd_path&#39;</span><span class="p">],</span>
+                                        <span class="s1">&#39;input coordinates file&#39;</span><span class="p">)</span>
+        <span class="n">validation</span><span class="o">.</span><span class="n">check_file_existence</span><span class="p">(</span><span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;top_path&#39;</span><span class="p">],</span>
+                                        <span class="s1">&#39;input topology file&#39;</span><span class="p">)</span>
+        <span class="n">validation</span><span class="o">.</span><span class="n">check_pose_convertibility</span><span class="p">(</span>
+            <span class="n">pose</span><span class="p">,</span>
+            <span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;crd_path&#39;</span><span class="p">],</span>
+            <span class="n">leap_args</span><span class="p">[</span><span class="s1">&#39;top_path&#39;</span><span class="p">])</span>
+        <span class="n">min_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_run_md_args</span><span class="p">(</span><span class="n">working_dir</span><span class="o">=</span><span class="n">working_dir</span><span class="p">,</span>
+                                          <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+                                          <span class="n">minp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ref_pose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_pose</span>
+        <span class="k">if</span> <span class="n">ref_pose</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ref_leap_args</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">leap_args</span><span class="p">)</span>
+            <span class="n">ref_leap_args</span><span class="p">[</span><span class="s1">&#39;crd_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_args</span><span class="p">[</span><span class="s1">&#39;refc&#39;</span><span class="p">]</span>
+            <span class="n">pose_to_traj</span><span class="o">.</span><span class="n">pose_to_amber_params</span><span class="p">(</span><span class="n">ref_pose</span><span class="p">,</span> <span class="o">**</span><span class="n">ref_leap_args</span><span class="p">)</span>
+            <span class="n">validation</span><span class="o">.</span><span class="n">check_pose_convertibility</span><span class="p">(</span>
+                <span class="n">ref_pose</span><span class="p">,</span>
+                <span class="n">ref_leap_args</span><span class="p">[</span><span class="s1">&#39;crd_path&#39;</span><span class="p">],</span>
+                <span class="n">ref_leap_args</span><span class="p">[</span><span class="s1">&#39;top_path&#39;</span><span class="p">])</span>
+        <span class="n">pose_to_traj</span><span class="o">.</span><span class="n">run_md</span><span class="p">(</span><span class="o">**</span><span class="n">min_args</span><span class="p">)</span>
+        <span class="c1"># Actual .apply methods aren&#39;t supposed to return anything, but this is</span>
+        <span class="c1"># only half of one; all the local variables need to get carried over,</span>
+        <span class="c1"># especially working_dir (so that it doesn&#39;t get destroyed in the case</span>
+        <span class="c1"># that it&#39;s a temporary directory).</span>
+        <span class="k">return</span> <span class="n">working_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">min_args</span>
+
+<span class="c1">### Premier classes</span>
+
+<div class="viewcode-block" id="AMBERMinMover"><a class="viewcode-back" href="../../ambrose.html#ambrose.movers.AMBERMinMover">[docs]</a><span class="k">class</span> <span class="nc">AMBERMinMover</span><span class="p">(</span><span class="n">_AMBERMover</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A Mover-like object that uses pmemd.cuda to minimize a pose.</span>
+
+<span class="sd">    Intermediate files are stored by default in the working directory, prefixed</span>
+<span class="sd">    with a timestamp. The directory and prefix may be overridden. Output of the</span>
+<span class="sd">    files can be turned off altogether by setting the directory to ``None``,</span>
+<span class="sd">    although the files will still be output intermediately and cleaned up at the</span>
+<span class="sd">    end. Here is a list of all files output by this mover:</span>
+
+<span class="sd">    &lt;prefix&gt;-leap.log</span>
+<span class="sd">        The log file where the LEaP output for the conversion of the pose(s)</span>
+<span class="sd">        to AMBER input files is recorded.</span>
+<span class="sd">    &lt;prefix&gt;-prmtop.parm7</span>
+<span class="sd">        The topology file describing the chemistry and connectivity of the</span>
+<span class="sd">        protein(s) in your minimization, generated by LEaP.</span>
+<span class="sd">    &lt;prefix&gt;-inpcrd.rst7</span>
+<span class="sd">        The initial coordinates for your minimization, generated by LEaP.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdin.in</span>
+<span class="sd">        The FORTRAN NAMELIST file that contains the minimization parameters.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdout.out</span>
+<span class="sd">        The log file where each ``mdinfo`` is recorded during the minimization.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdinfo</span>
+<span class="sd">        The log file where high-level information about the current state of the</span>
+<span class="sd">        minimization is recorded.</span>
+<span class="sd">    &lt;prefix&gt;-min-restrt.nc</span>
+<span class="sd">        The latest coordinates for your minimization. After the minimization is</span>
+<span class="sd">        over, this gives the new coordinates for your input Pose.</span>
+
+<span class="sd">    The following file may additionally be output if a reference Pose (with</span>
+<span class="sd">    necessarily the same topology as your simulated Pose) is specified:</span>
+
+<span class="sd">    &lt;prefix&gt;-refc.rst7</span>
+<span class="sd">        The coordinates of the reference structure, generated by LEaP.</span>
+
+<span class="sd">    Member variables are Python properties, as opposed to being accessed via</span>
+<span class="sd">    getters and setters as in a traditional Mover. See the getters for their</span>
+<span class="sd">    documentation, or see the constructor parameters given below, which</span>
+<span class="sd">    correspond to member variables.</span>
+
+<span class="sd">    This object provides, but does not implement or document, all the methods of</span>
+<span class="sd">    the base Mover class. The only method from the base class that actually</span>
+<span class="sd">    works is `apply`_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    working_dir : str or None, optional</span>
+<span class="sd">        The directory to place the intermediate files in. Defaults to the</span>
+<span class="sd">        current working directory. If set to None, intermediate files will</span>
+<span class="sd">        be output to a temporary directory, and deleted once the mover has</span>
+<span class="sd">        finished running. (This is not recommended, especially if you&#39;re running</span>
+<span class="sd">        the mover multiple times on the same structure.)</span>
+<span class="sd">    prefix : str or None, optional</span>
+<span class="sd">        The prefix of the intermediate files output by the simulation. If set to</span>
+<span class="sd">        None, will use the timestamp at which `apply`_ was called.</span>
+<span class="sd">    solvent : Solvent or None, optional</span>
+<span class="sd">        The type of solvent to use for an explicit-solvent simulation, if any.</span>
+<span class="sd">        If this is set to None, an implicit-solvent simulation will be performed</span>
+<span class="sd">        instead. None by default.</span>
+<span class="sd">    solvent_shape : SolventShape, optional</span>
+<span class="sd">        The shape of solvent to use for an explicit-solvent simulation. ``OCT``</span>
+<span class="sd">        by default.</span>
+<span class="sd">    cutoff : int or float, optional</span>
+<span class="sd">        Van der Waals cutoff in angstroms. 15 by default.</span>
+<span class="sd">    ref_pose : rosetta.core.Pose, optional</span>
+<span class="sd">        Reference pose to give coordinate constraints, if any. It is safe to</span>
+<span class="sd">        use the pose that you are operating on for this purpose, if you want</span>
+<span class="sd">        to constrain the pose to its original coordinates.</span>
+<span class="sd">    cst_mask : str, optional</span>
+<span class="sd">        Atom mask specifying which atoms are affected by the coordinate</span>
+<span class="sd">        constraints. Given in ambmask syntax; see section 19.1 of the 2019</span>
+<span class="sd">        AMBER manual, on page 410.</span>
+<span class="sd">    cst_weight : float, optional</span>
+<span class="sd">        Weight of coordinate constraints, in kcal/mol/angstroms^2.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_dir</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">solvent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">solvent_shape</span><span class="o">=</span><span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">OCT</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">):</span>
+        <span class="n">_AMBERMover</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">working_dir</span><span class="o">=</span><span class="n">working_dir</span><span class="p">,</span>
+                             <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+                             <span class="n">solvent</span><span class="o">=</span><span class="n">solvent</span><span class="p">,</span>
+                             <span class="n">solvent_shape</span><span class="o">=</span><span class="n">solvent_shape</span><span class="p">,</span>
+                             <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;AMBERMinMover(</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  working_dir=</span><span class="si">{self.working_dir}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  prefix=</span><span class="si">{self.prefix}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  solvent=</span><span class="si">{self.solvent}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  solvent_shape=</span><span class="si">{self.solvent_shape}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  cutoff=</span><span class="si">{self.cutoff}</span><span class="s1">)&#39;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;AMBERMinMover&#39;</span>
+<div class="viewcode-block" id="AMBERMinMover.apply"><a class="viewcode-back" href="../../ambrose.html#ambrose.movers.AMBERMinMover.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Minimize the given pose using pmemd.cuda.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pose : rosetta.core.Pose</span>
+<span class="sd">            Pose to minimize.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># pylint: disable=unused-variable</span>
+        <span class="c1"># (working_dir needs to be alive so that the directory can continue</span>
+        <span class="c1">#  existing if it&#39;s a temporary directory)</span>
+        <span class="n">working_dir</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">min_args</span> <span class="o">=</span> <span class="n">_AMBERMover</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">)</span>
+        <span class="n">validation</span><span class="o">.</span><span class="n">check_file_existence</span><span class="p">(</span>
+            <span class="n">min_args</span><span class="p">[</span><span class="s1">&#39;restrt&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;minimization results&#39;</span><span class="p">)</span>
+        <span class="n">_transfer_xyz_from_pose_to_pose</span><span class="p">(</span>
+            <span class="n">traj_to_poses</span><span class="o">.</span><span class="n">pose_from_amber_params</span><span class="p">(</span>
+                <span class="n">min_args</span><span class="p">[</span><span class="s1">&#39;restrt&#39;</span><span class="p">],</span>
+                <span class="n">min_args</span><span class="p">[</span><span class="s1">&#39;prmtop&#39;</span><span class="p">]),</span>
+            <span class="n">pose</span><span class="p">)</span></div></div>
+        <span class="c1"># working_dir should get cleaned up on its own if it&#39;s a</span>
+        <span class="c1"># TemporaryDirectory</span>
+
+<div class="viewcode-block" id="AMBERSimulateMover"><a class="viewcode-back" href="../../ambrose.html#ambrose.movers.AMBERSimulateMover">[docs]</a><span class="k">class</span> <span class="nc">AMBERSimulateMover</span><span class="p">(</span><span class="n">_AMBERMover</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A Mover-like object that uses pmemd.cuda to minimize and then simulate a</span>
+<span class="sd">    pose, ultimately overwriting it with a frame from the simulation&#39;s</span>
+<span class="sd">    trajectory.</span>
+
+<span class="sd">    Intermediate files are stored by default in the working directory, prefixed</span>
+<span class="sd">    with a timestamp. The directory and prefix may be overridden. Output of the</span>
+<span class="sd">    files can be turned off altogether by setting the directory to ``None``,</span>
+<span class="sd">    although the files will still be output intermediately and cleaned up at the</span>
+<span class="sd">    end. Here is a list of all files output by this mover:</span>
+
+<span class="sd">    &lt;prefix&gt;-leap.log</span>
+<span class="sd">        The log file where the LEaP output for the conversion of the pose(s)</span>
+<span class="sd">        to AMBER input files is recorded.</span>
+<span class="sd">    &lt;prefix&gt;-prmtop.parm7</span>
+<span class="sd">        The topology file describing the chemistry and connectivity of the</span>
+<span class="sd">        protein(s) in your simulation, generated by LEaP.</span>
+<span class="sd">    &lt;prefix&gt;-inpcrd.rst7</span>
+<span class="sd">        The initial coordinates for your minimization, generated by LEaP.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdin.in</span>
+<span class="sd">        The FORTRAN NAMELIST file that contains the minimization parameters.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdout.out</span>
+<span class="sd">        The log file where each ``mdinfo`` is recorded during the minimization.</span>
+<span class="sd">    &lt;prefix&gt;-min-mdinfo</span>
+<span class="sd">        The log file where high-level information about the current state of the</span>
+<span class="sd">        minimization is recorded.</span>
+<span class="sd">    &lt;prefix&gt;-min-restrt.nc</span>
+<span class="sd">        The latest coordinates for your minimization. After the minimization is</span>
+<span class="sd">        over, this gives the starting coordinates for your simulation.</span>
+<span class="sd">    &lt;prefix&gt;-mdin.in</span>
+<span class="sd">        The FORTRAN NAMELIST file that contains the simulation parameters.</span>
+<span class="sd">    &lt;prefix&gt;-mdout.out</span>
+<span class="sd">        The log file where each ``mdinfo`` is recorded during the simulation.</span>
+<span class="sd">    &lt;prefix&gt;-mdinfo</span>
+<span class="sd">        The log file where high-level information about the current state of the</span>
+<span class="sd">        simulation is recorded.</span>
+<span class="sd">    &lt;prefix&gt;-restrt.nc</span>
+<span class="sd">        The latest coordinates and velocities for your simulation.</span>
+<span class="sd">    &lt;prefix&gt;-mdcrd.nc</span>
+<span class="sd">        The frames for your simulation&#39;s trajectory. Your Pose&#39;s new</span>
+<span class="sd">        conformation will be selected from among these by `pose_selector`_.</span>
+
+<span class="sd">    The following file may additionally be output if a reference Pose (with</span>
+<span class="sd">    necessarily the same topology as your simulated Pose) is specified:</span>
+
+<span class="sd">    &lt;prefix&gt;-refc.rst7</span>
+<span class="sd">        The coordinates of the reference structure, generated by LEaP.</span>
+
+<span class="sd">    Member variables are Python properties, as opposed to being accessed via</span>
+<span class="sd">    getters and setters as in a traditional Mover. See the getters for their</span>
+<span class="sd">    documentation, or see the constructor parameters given below, which</span>
+<span class="sd">    correspond to member variables. The only writable member variable that does</span>
+<span class="sd">    not appear in the constructor as a parameter is `pose_selector`_, which is</span>
+<span class="sd">    the function that determines which frame to use from the simulated</span>
+<span class="sd">    trajectory to overwrite the input Pose.</span>
+
+<span class="sd">    This object provides, but does not implement or document, all the methods</span>
+<span class="sd">    of the base Mover class. See the documentation for the class `_NotAMover`_</span>
+<span class="sd">    for more info.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    working_dir : str or None, optional</span>
+<span class="sd">        The directory to place the intermediate files in. Defaults to the</span>
+<span class="sd">        current working directory. If set to None, intermediate files will</span>
+<span class="sd">        be output to a temporary directory, and deleted once the mover has</span>
+<span class="sd">        finished running. (This is not recommended, especially if you&#39;re running</span>
+<span class="sd">        the mover multiple times on the same structure.)</span>
+<span class="sd">    prefix : str or None, optional</span>
+<span class="sd">        The prefix of the intermediate files output by the simulation. If set to</span>
+<span class="sd">        None, will use the timestamp at which `apply`_ was called.</span>
+<span class="sd">    solvent : Solvent or None, optional</span>
+<span class="sd">        The type of solvent to use for an explicit-solvent simulation, if any.</span>
+<span class="sd">        If this is set to None, an implicit-solvent simulation will be performed</span>
+<span class="sd">        instead. None by default.</span>
+<span class="sd">    solvent_shape : SolventShape, optional</span>
+<span class="sd">        The shape of solvent to use for an explicit-solvent simulation. ``OCT``</span>
+<span class="sd">        by default.</span>
+<span class="sd">    duration : int or float, optional</span>
+<span class="sd">        Duration of simulation in picoseconds. Must be set before the simulation</span>
+<span class="sd">        runs.</span>
+<span class="sd">    temperature : int or float, optional</span>
+<span class="sd">        Temperature of simulation in kelvins. Must be set before the simulation</span>
+<span class="sd">        runs.</span>
+<span class="sd">    starting_temperature : int or float, optional</span>
+<span class="sd">        Starting temperature of simulation in kelvins. 0 by default.</span>
+<span class="sd">    cutoff : int or float, optional</span>
+<span class="sd">        Van der Waals cutoff in angstroms. 15 by default.</span>
+<span class="sd">    output_interval : int or float, optional</span>
+<span class="sd">        Amount of time to wait in between writing frames and log data, in</span>
+<span class="sd">        picoseconds. 1 by default.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed to use for random operations (e.g. Langevin thermostat).</span>
+<span class="sd">        Nonnegative integers are valid seeds, while negative integers cause</span>
+<span class="sd">        the seed to be determined by the hardware.</span>
+<span class="sd">    ref_pose : rosetta.core.Pose, optional</span>
+<span class="sd">        Reference pose to give coordinate constraints, if any. It is safe to</span>
+<span class="sd">        use the pose that you are operating on for this purpose, if you want</span>
+<span class="sd">        to constrain the pose to its original coordinates.</span>
+<span class="sd">    cst_mask : str, optional</span>
+<span class="sd">        Atom mask specifying which atoms are affected by the coordinate</span>
+<span class="sd">        constraints. Given in ambmask syntax; see section 19.1 of the 2019</span>
+<span class="sd">        AMBER manual, on page 410.</span>
+<span class="sd">    cst_weight : float, optional</span>
+<span class="sd">        Weight of coordinate constraints, in kcal/mol/angstroms^2.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_dir</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">solvent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">solvent_shape</span><span class="o">=</span><span class="n">enums</span><span class="o">.</span><span class="n">SolventShape</span><span class="o">.</span><span class="n">OCT</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">starting_temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">15.</span><span class="p">,</span>
+                 <span class="n">output_interval</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ref_pose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cst_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">cst_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">_AMBERMover</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">working_dir</span><span class="o">=</span><span class="n">working_dir</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+            <span class="n">solvent</span><span class="o">=</span><span class="n">solvent</span><span class="p">,</span>
+            <span class="n">solvent_shape</span><span class="o">=</span><span class="n">solvent_shape</span><span class="p">,</span>
+            <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+            <span class="n">ref_pose</span><span class="o">=</span><span class="n">ref_pose</span><span class="p">,</span>
+            <span class="n">cst_mask</span><span class="o">=</span><span class="n">cst_mask</span><span class="p">,</span>
+            <span class="n">cst_weight</span><span class="o">=</span><span class="n">cst_weight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_duration_is_int</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="k">if</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starting_temperature</span> <span class="o">=</span> <span class="n">starting_temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_interval_is_int</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_interval</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_interval</span> <span class="o">=</span> <span class="n">output_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pose_selector</span> <span class="o">=</span> <span class="n">pose_selectors</span><span class="o">.</span><span class="n">last</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;AMBERMinMover(</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  working_dir=</span><span class="si">{self.working_dir}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  prefix=</span><span class="si">{self.prefix}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  solvent=</span><span class="si">{self.solvent}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  solvent_shape=</span><span class="si">{self.solvent_shape}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  duration=</span><span class="si">{self.duration}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  temperature=</span><span class="si">{self.temperature}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  starting_temperature=</span><span class="si">{self.starting_temperature}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  cutoff=</span><span class="si">{self.cutoff}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  output_interval=</span><span class="si">{self.output_interval}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  seed=</span><span class="si">{self.seed}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  pose_selector=</span><span class="si">{self.pose_selector}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  ref_pose=</span><span class="si">{self.ref_pose}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  cst_mask=</span><span class="si">{self.cst_mask}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;  cst_weight=</span><span class="si">{self.cst_weight}</span><span class="s1">)&#39;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;AMBERSimulateMover&#39;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pose_selector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;function: A function that selects which frame of the simulated</span>
+<span class="sd">        trajectory to use to overwrite your input Pose when `apply`_ is called.</span>
+<span class="sd">        In practice, it can be any function that takes an ordered list of Poses</span>
+<span class="sd">        and returns one of them, since it operates on a `TrajToPoses`_ object</span>
+<span class="sd">        and returns one of its entries. By default, it&#39;s equal to the function</span>
+<span class="sd">        `last`_ from the submodule `pose_selectors`_, which selects the last</span>
+<span class="sd">        frame of the trajectory; there is also the more sophisticated option of</span>
+<span class="sd">        `lowest_energy_from_end`_ available from the same module.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pose_selector</span>
+    <span class="nd">@pose_selector</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">pose_selector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pose_selector</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float: Duration of simulation in picoseconds.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;nstlim&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_duration_is_int</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;nstlim&#39;</span><span class="p">]</span> <span class="o">//</span> <span class="mi">1000</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;nstlim&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1000.</span>
+    <span class="nd">@duration</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_duration_is_int</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;nstlim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float: Temperature of simulation in kelvins.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;temp0&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;temp0&#39;</span><span class="p">)</span>
+    <span class="nd">@temperature</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;temp0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">starting_temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float: Starting temperature of simulation in kelvins. 0 by</span>
+<span class="sd">        default.&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;tempi&#39;</span><span class="p">]</span>
+    <span class="nd">@starting_temperature</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">starting_temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;tempi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int or float: Amount of in-simulation time to wait in between writing</span>
+<span class="sd">        successive frames and log data, in picoseconds. 1 by default.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_interval_is_int</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntwx&#39;</span><span class="p">]</span> <span class="o">//</span> <span class="mi">1000</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntwx&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1000.</span>
+    <span class="nd">@output_interval</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">output_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_interval_is_int</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntwx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ntpr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;int: Seed to use for random operations (in our case, the Langevin</span>
+<span class="sd">        thermostat, if it&#39;s a wet simulation). Nonnegative integers are valid</span>
+<span class="sd">        seeds, while negative integers cause the seed to be determined by the</span>
+<span class="sd">        hardware. -1 by default.&#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ig&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="nd">@seed</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ig&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mdin_dict</span><span class="p">[</span><span class="s1">&#39;ig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<div class="viewcode-block" id="AMBERSimulateMover.simulate"><a class="viewcode-back" href="../../ambrose.html#ambrose.movers.AMBERSimulateMover.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Minimize, then simulate the given Pose using pmemd.cuda. Return a</span>
+<span class="sd">        Trajectory object of the frames output during the simulation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pose : rosetta.core.Pose</span>
+<span class="sd">            Pose to minimize and simulate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pytraj.Trajectory</span>
+<span class="sd">            The frames from the simulation.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Set duration first.&#39;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Set temperature first.&#39;</span>
+
+        <span class="c1"># pylint: disable=unused-variable</span>
+        <span class="c1"># (working_dir needs to be alive so that the directory can continue</span>
+        <span class="c1">#  existing if it&#39;s a temporary directory)</span>
+        <span class="n">working_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">min_args</span> <span class="o">=</span> <span class="n">_AMBERMover</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">)</span>
+        <span class="n">validation</span><span class="o">.</span><span class="n">check_file_existence</span><span class="p">(</span>
+            <span class="n">min_args</span><span class="p">[</span><span class="s1">&#39;restrt&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;minimization results&#39;</span><span class="p">)</span>
+        <span class="n">md_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_run_md_args</span><span class="p">(</span><span class="n">working_dir</span><span class="o">=</span><span class="n">working_dir</span><span class="p">,</span>
+                                         <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+                                         <span class="n">minp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">pose_to_traj</span><span class="o">.</span><span class="n">run_md</span><span class="p">(</span><span class="o">**</span><span class="n">md_args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">traj_to_poses</span><span class="o">.</span><span class="n">TrajToPoses</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">iterload</span><span class="p">(</span><span class="n">md_args</span><span class="p">[</span><span class="s1">&#39;mdcrd&#39;</span><span class="p">],</span>
+                                                     <span class="n">md_args</span><span class="p">[</span><span class="s1">&#39;prmtop&#39;</span><span class="p">]))</span></div>
+        <span class="c1"># working_dir should get cleaned up on its own if it&#39;s a</span>
+        <span class="c1"># TemporaryDirectory</span>
+<div class="viewcode-block" id="AMBERSimulateMover.apply"><a class="viewcode-back" href="../../ambrose.html#ambrose.movers.AMBERSimulateMover.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pose</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Minimize, then simulate the given pose using pmemd.cuda. Replace the</span>
+<span class="sd">        Pose with a frame from the simulation selected by this mover&#39;s</span>
+<span class="sd">        `pose_selector`_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pose : rosetta.core.Pose</span>
+<span class="sd">            Pose to minimize and simulate.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">_transfer_xyz_from_pose_to_pose</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pose_selector</span><span class="p">(</span> <span class="c1"># pylint: disable=not-callable</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">pose</span><span class="p">)),</span>
+            <span class="n">pose</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maria Szegedy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
