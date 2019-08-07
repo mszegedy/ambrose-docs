@@ -14,12 +14,18 @@
 #
 import os
 import sys
-try:
-    sys.path.insert(0, os.path.abspath(
-         os.path.join(os.getenv('ROSETTAHOME'), 'tools/AmbRose')))
-except TypeError:
-    print('Error: ROSETTAHOME variable not set.')
-    sys.exit()
+
+on_rtd = os.getenv('READTHEDOCS') == 'True'
+exclude_patterns = []
+if on_rtd:
+    exclude_patterns.append('**/*' )
+else:
+    try:
+        sys.path.insert(0, os.path.abspath(
+            os.path.join(os.getenv('ROSETTAHOME'), 'tools/AmbRose')))
+    except TypeError:
+        print('Error: ROSETTAHOME variable not set.')
+        sys.exit()
 
 
 # -- Project information -----------------------------------------------------
